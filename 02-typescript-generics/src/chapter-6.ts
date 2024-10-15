@@ -1,0 +1,1 @@
+// stricter omit type

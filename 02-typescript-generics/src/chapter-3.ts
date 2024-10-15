@@ -1,0 +1,1 @@
+// generics with multiple arguments
