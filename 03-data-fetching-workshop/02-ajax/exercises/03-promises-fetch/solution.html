@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercise 03: Promises, Fetch & async/await — Solution</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       CSS Variables
+       ═══════════════════════════════════════════════════════════════════════════ */
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-hover: #1a1a26;
+      --border: #2a2a3a;
+      --text: #e4e4ef;
+      --text-muted: #6e6e82;
+      --accent: #a855f7;
+      --accent-dim: rgba(168, 85, 247, 0.15);
+      --success: #4ade80;
+      --error: #f87171;
+      --warning: #facc15;
+      --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+      --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Reset & Base
+       ═══════════════════════════════════════════════════════════════════════════ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Top Banner (Solution - Green themed)
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .banner {
+      background: rgba(74, 222, 128, 0.1);
+      border-bottom: 1px solid var(--success);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+    }
+
+    .banner-path {
+      color: var(--success);
+    }
+
+    .banner-tag {
+      background: var(--success);
+      color: var(--bg);
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Container
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 span {
+      color: var(--success);
+    }
+
+    .description {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      font-size: 1rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Annotation Block (Solution explanation)
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .annotation {
+      background: rgba(74, 222, 128, 0.08);
+      border-left: 3px solid var(--success);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .annotation-title {
+      color: var(--success);
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      font-family: var(--font-mono);
+    }
+
+    .annotation p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .annotation code {
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--success);
+      padding: 0.125rem 0.375rem;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Network Activity Panel
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .network-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .network-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .network-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    .network-body {
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .network-entry {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .network-entry:last-child {
+      border-bottom: none;
+    }
+
+    .network-method {
+      color: var(--accent);
+      font-weight: 600;
+      width: 50px;
+    }
+
+    .network-url {
+      color: var(--text-muted);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .network-status {
+      width: 60px;
+      text-align: right;
+    }
+
+    .network-status.pending {
+      color: #facc15;
+    }
+
+    .network-status.success {
+      color: var(--success);
+    }
+
+    .network-status.error {
+      color: var(--error);
+    }
+
+    .network-time {
+      width: 70px;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    .network-placeholder {
+      padding: 1rem;
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Error Container
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .error-container {
+      margin-bottom: 1.5rem;
+    }
+
+    .error-banner {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid var(--error);
+      border-radius: 6px;
+      padding: 1rem;
+      color: var(--error);
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Tab Navigation
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      border-bottom: none;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+      background: var(--surface);
+    }
+
+    .tab-btn.active {
+      background: rgba(74, 222, 128, 0.1);
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Section Styling
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .section-header {
+      margin-bottom: 1rem;
+    }
+
+    .section-header h2 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-header h2 span {
+      color: var(--success);
+      font-family: var(--font-mono);
+    }
+
+    .section-header .description {
+      margin-bottom: 1rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Controls
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .status {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Profile Panels
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .profile-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .profile-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel-header .icon {
+      font-size: 1rem;
+    }
+
+    .panel-body {
+      padding: 1rem;
+    }
+
+    .panel-empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Profile Card */
+    .profile-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .profile-card .avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--surface-hover);
+    }
+
+    .profile-card .info h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .profile-card .info .email {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .profile-card .info .role {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    /* Posts List */
+    .posts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .post-item {
+      padding: 0.75rem;
+      background: var(--surface-hover);
+      border-radius: 6px;
+    }
+
+    .post-item h4 {
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    .post-item .date {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+    }
+
+    /* Comments List */
+    .comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .comment-item {
+      padding: 0.75rem;
+      background: var(--surface-hover);
+      border-radius: 6px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .comment-item .author {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    .comment-item .body {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       All Users Posts Grid (Part C)
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .users-posts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .user-posts-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      transition: border-color 0.15s ease;
+    }
+
+    .user-posts-card:hover {
+      border-color: var(--accent);
+    }
+
+    .user-posts-card .user-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .user-posts-card .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface-hover);
+    }
+
+    .user-posts-card .user-name {
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .user-posts-card .post-count {
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .user-posts-card .post-titles {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .user-posts-card .post-titles li {
+      margin-bottom: 0.25rem;
+      list-style: none;
+      padding-left: 0.75rem;
+      position: relative;
+    }
+
+    .user-posts-card .post-titles li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Total Time Display
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .total-time {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .total-time-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      font-family: var(--font-mono);
+    }
+
+    .total-time-value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--accent);
+      font-family: var(--font-mono);
+    }
+
+    .total-time-note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* Comparison box for Part C */
+    .comparison-box {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .comparison-item {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .comparison-item.highlight {
+      border-color: var(--success);
+      background: rgba(74, 222, 128, 0.05);
+    }
+
+    .comparison-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      font-family: var(--font-mono);
+    }
+
+    .comparison-value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .comparison-item.highlight .comparison-value {
+      color: var(--success);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Loading Skeletons
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .skeleton {
+      background: linear-gradient(
+        90deg,
+        var(--surface) 25%,
+        var(--surface-hover) 50%,
+        var(--surface) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+      height: 76px;
+    }
+
+    .skeleton-small {
+      height: 48px;
+    }
+
+    .skeleton-profile {
+      height: 88px;
+    }
+
+    .skeleton-card {
+      height: 150px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Empty State
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       Top Banner (Green - Solution)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div class="banner">
+    <span class="banner-path">Data Fetching Workshop → Session 02 → Exercise 03</span>
+    <span class="banner-tag">SOLUTION</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       Main Content
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div class="container">
+    <h1><span>03.</span> Promises, Fetch & async/await — Solution</h1>
+    <p class="description">
+      Rewrite the callback hell from Exercise 02 using modern JavaScript. Same data, same waterfall — but <strong>much cleaner code</strong>.
+    </p>
+
+    <!-- Network Activity Panel -->
+    <div class="network-panel">
+      <div class="network-header">
+        <div class="network-dot"></div>
+        <span>Network Activity</span>
+      </div>
+      <div class="network-body" id="network-log">
+        <div class="network-placeholder">Waiting for requests...</div>
+      </div>
+    </div>
+
+    <!-- Error Container -->
+    <div class="error-container" id="error-container"></div>
+
+    <!-- Tab Navigation -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('then')">Part A: .then() chains</button>
+      <button class="tab-btn" onclick="switchTab('await')">Part B: async/await</button>
+      <button class="tab-btn" onclick="switchTab('parallel')">Part C: Promise.all</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Tab Panel A: .then() chains
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="panel-then" class="tab-panel active">
+      <div class="section-header">
+        <h2><span>Part A</span> — fetch() + .then() chains</h2>
+        <p class="description">
+          Flatten the nested callbacks into a chain. Each <code>.then()</code> returns a Promise that feeds into the next.
+        </p>
+      </div>
+
+      <!-- Annotation for Part A -->
+      <div class="annotation">
+        <div class="annotation-title">.then() chaining flattens the pyramid</div>
+        <p>
+          Instead of nesting callbacks inside callbacks, each <code>.then()</code> returns a new Promise
+          that feeds into the next <code>.then()</code>. Error handling is consolidated — a single
+          <code>.catch()</code> at the end catches errors from ANY step in the chain. But notice:
+          the requests are still sequential. <code>.then()</code> chains are waterfall by nature.
+          The syntax is cleaner, but the network behavior is identical to Exercise 02.
+        </p>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="load-then-btn" onclick="fetchProfileWithThen()">
+          Load Profile (.then)
+        </button>
+        <button class="btn btn-ghost" onclick="clearSection('then')">
+          Clear
+        </button>
+        <span class="status" id="then-status"></span>
+      </div>
+
+      <div class="profile-container" id="profile-then">
+        <div class="profile-panel">
+          <div class="panel-header"><span class="icon">👤</span><span>User Info</span></div>
+          <div class="panel-body" id="user-panel-then"><div class="panel-empty">Waiting for user data...</div></div>
+        </div>
+        <div class="profile-panel">
+          <div class="panel-header"><span class="icon">📝</span><span>Posts</span></div>
+          <div class="panel-body" id="posts-panel-then"><div class="panel-empty">Waiting for posts...</div></div>
+        </div>
+        <div class="profile-panel">
+          <div class="panel-header"><span class="icon">💬</span><span>Comments on First Post</span></div>
+          <div class="panel-body" id="comments-panel-then"><div class="panel-empty">Waiting for comments...</div></div>
+        </div>
+      </div>
+
+      <div class="total-time" id="total-time-then" style="display: none;">
+        <div class="total-time-label">Total Waterfall Time</div>
+        <div class="total-time-value" id="total-time-value-then">—</div>
+        <div class="total-time-note">3 sequential requests × ~300ms each</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Tab Panel B: async/await
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="panel-await" class="tab-panel">
+      <div class="section-header">
+        <h2><span>Part B</span> — async/await</h2>
+        <p class="description">
+          Same logic as Part A, but using <code>async/await</code>. It reads like synchronous code.
+        </p>
+      </div>
+
+      <!-- Annotation for Part B -->
+      <div class="annotation">
+        <div class="annotation-title">async/await is syntactic sugar over Promises</div>
+        <p>
+          Under the hood, it's the same thing as <code>.then()</code> chains. But it reads like
+          synchronous, top-to-bottom code. <code>try/catch</code> replaces <code>.catch()</code>.
+          This is how most modern codebases write async code. But again — still a waterfall.
+          Each <code>await</code> pauses execution until the previous request completes.
+          Open the Network tab: same 3 sequential requests, same ~900ms total.
+        </p>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="load-await-btn" onclick="fetchProfileWithAwait()">
+          Load Profile (await)
+        </button>
+        <button class="btn btn-ghost" onclick="clearSection('await')">
+          Clear
+        </button>
+        <span class="status" id="await-status"></span>
+      </div>
+
+      <div class="profile-container" id="profile-await">
+        <div class="profile-panel">
+          <div class="panel-header"><span class="icon">👤</span><span>User Info</span></div>
+          <div class="panel-body" id="user-panel-await"><div class="panel-empty">Waiting for user data...</div></div>
+        </div>
+        <div class="profile-panel">
+          <div class="panel-header"><span class="icon">📝</span><span>Posts</span></div>
+          <div class="panel-body" id="posts-panel-await"><div class="panel-empty">Waiting for posts...</div></div>
+        </div>
+        <div class="profile-panel">
+          <div class="panel-header"><span class="icon">💬</span><span>Comments on First Post</span></div>
+          <div class="panel-body" id="comments-panel-await"><div class="panel-empty">Waiting for comments...</div></div>
+        </div>
+      </div>
+
+      <div class="total-time" id="total-time-await" style="display: none;">
+        <div class="total-time-label">Total Waterfall Time</div>
+        <div class="total-time-value" id="total-time-value-await">—</div>
+        <div class="total-time-note">3 sequential requests × ~300ms each</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         Tab Panel C: Promise.all
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="panel-parallel" class="tab-panel">
+      <div class="section-header">
+        <h2><span>Part C</span> — Promise.all for parallel requests</h2>
+        <p class="description">
+          Fetch ALL users' posts simultaneously. These requests don't depend on each other — so why wait?
+        </p>
+      </div>
+
+      <!-- Annotation for Part C -->
+      <div class="annotation">
+        <div class="annotation-title">Promise.all is the key to parallelism</div>
+        <p>
+          When requests don't depend on each other, you can fire them all at once and wait for
+          all of them to finish. The total time drops from N × delay to just 1 × delay.
+          Look at the Network panel — all 5 post requests fire at the SAME TIME. Total time:
+          ~600ms (300ms for users + 300ms for all posts in parallel), not ~1800ms (300ms + 5 × 300ms).
+          This is the first tool we've seen that actually reduces total request time — but only
+          for INDEPENDENT requests.
+        </p>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="load-parallel-btn" onclick="fetchAllPostsParallel()">
+          Load All Posts (parallel)
+        </button>
+        <button class="btn btn-ghost" onclick="clearSection('parallel')">
+          Clear
+        </button>
+        <span class="status" id="parallel-status"></span>
+      </div>
+
+      <div class="users-posts-grid" id="users-posts-grid">
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          <div class="empty-state-icon">⚡</div>
+          <p>Click to fetch all users' posts in parallel</p>
+        </div>
+      </div>
+
+      <div class="comparison-box" id="comparison-box" style="display: none;">
+        <div class="comparison-item">
+          <div class="comparison-label">If Sequential</div>
+          <div class="comparison-value" id="sequential-estimate">~1800ms</div>
+        </div>
+        <div class="comparison-item highlight">
+          <div class="comparison-label">With Promise.all</div>
+          <div class="comparison-value" id="parallel-actual">—</div>
+        </div>
+      </div>
+
+      <div class="total-time" id="total-time-parallel" style="display: none;">
+        <div class="total-time-label">Total Time (Parallel)</div>
+        <div class="total-time-value" id="total-time-value-parallel">—</div>
+        <div class="total-time-note">1 request for users + all posts requests in parallel</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       JavaScript
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <script>
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Configuration
+    // ─────────────────────────────────────────────────────────────────────────────
+    var API_BASE = "http://localhost:3069/api";
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // DOM References
+    // ─────────────────────────────────────────────────────────────────────────────
+    var networkLog = document.getElementById("network-log");
+    var errorContainer = document.getElementById("error-container");
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Tab Switching
+    // ─────────────────────────────────────────────────────────────────────────────
+    function switchTab(tabId) {
+      // Update tab buttons
+      document.querySelectorAll(".tab-btn").forEach(function(btn) {
+        btn.classList.remove("active");
+      });
+      event.target.classList.add("active");
+
+      // Update tab panels
+      document.querySelectorAll(".tab-panel").forEach(function(panel) {
+        panel.classList.remove("active");
+      });
+      document.getElementById("panel-" + tabId).classList.add("active");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Render Profile (reusable across tabs)
+    // ─────────────────────────────────────────────────────────────────────────────
+    function renderProfile(user, section) {
+      var panel = document.getElementById("user-panel-" + section);
+      panel.innerHTML = '<div class="profile-card">' +
+        '<img class="avatar" src="' + user.avatar + '" alt="' + user.name + '">' +
+        '<div class="info">' +
+          '<h3>' + user.name + '</h3>' +
+          '<div class="email">' + user.email + '</div>' +
+          '<span class="role">' + user.role + '</span>' +
+        '</div>' +
+      '</div>';
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Render Posts
+    // ─────────────────────────────────────────────────────────────────────────────
+    function renderPosts(posts, section) {
+      var panel = document.getElementById("posts-panel-" + section);
+      if (!posts || posts.length === 0) {
+        panel.innerHTML = '<div class="panel-empty">No posts found</div>';
+        return;
+      }
+      panel.innerHTML = '<div class="posts-list">' +
+        posts.map(function(post) {
+          return '<div class="post-item">' +
+            '<h4>' + post.title + '</h4>' +
+            '<div class="date">' + post.createdAt + '</div>' +
+          '</div>';
+        }).join("") +
+      '</div>';
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Render Comments
+    // ─────────────────────────────────────────────────────────────────────────────
+    function renderComments(comments, section) {
+      var panel = document.getElementById("comments-panel-" + section);
+      if (!comments || comments.length === 0) {
+        panel.innerHTML = '<div class="panel-empty">No comments on this post</div>';
+        return;
+      }
+      panel.innerHTML = '<div class="comments-list">' +
+        comments.map(function(comment) {
+          return '<div class="comment-item">' +
+            '<div class="author">User #' + comment.userId + '</div>' +
+            '<div class="body">' + comment.body + '</div>' +
+          '</div>';
+        }).join("") +
+      '</div>';
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Render All Users Posts (Part C)
+    // ─────────────────────────────────────────────────────────────────────────────
+    function renderAllUserPosts(results, section) {
+      var grid = document.getElementById("users-posts-grid");
+      grid.innerHTML = results.map(function(result) {
+        var postsList = result.posts.map(function(p) {
+          return '<li>' + p.title + '</li>';
+        }).join("");
+        return '<div class="user-posts-card">' +
+          '<div class="user-header">' +
+            '<img class="avatar" src="' + result.user.avatar + '" alt="' + result.user.name + '">' +
+            '<div>' +
+              '<div class="user-name">' + result.user.name + '</div>' +
+              '<div class="post-count">' + result.posts.length + ' post' + (result.posts.length !== 1 ? 's' : '') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<ul class="post-titles">' + postsList + '</ul>' +
+        '</div>';
+      }).join("");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Show Loading
+    // ─────────────────────────────────────────────────────────────────────────────
+    function showLoading(section) {
+      var btn = document.getElementById("load-" + section + "-btn");
+      var status = document.getElementById(section + "-status");
+      btn.disabled = true;
+      status.textContent = "Fetching...";
+      errorContainer.innerHTML = "";
+
+      if (section === "then" || section === "await") {
+        document.getElementById("user-panel-" + section).innerHTML = '<div class="skeleton skeleton-profile"></div>';
+        document.getElementById("posts-panel-" + section).innerHTML = '<div class="skeleton skeleton-small"></div><div class="skeleton skeleton-small"></div>';
+        document.getElementById("comments-panel-" + section).innerHTML = '<div class="skeleton skeleton-small"></div>';
+        document.getElementById("total-time-" + section).style.display = "none";
+      } else if (section === "parallel") {
+        document.getElementById("users-posts-grid").innerHTML =
+          '<div class="skeleton skeleton-card"></div>'.repeat(5);
+        document.getElementById("total-time-parallel").style.display = "none";
+        document.getElementById("comparison-box").style.display = "none";
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Show Error
+    // ─────────────────────────────────────────────────────────────────────────────
+    function showError(message) {
+      errorContainer.innerHTML = '<div class="error-banner">' + message + '</div>';
+      document.querySelectorAll(".btn-primary").forEach(function(btn) {
+        btn.disabled = false;
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Show Total Time
+    // ─────────────────────────────────────────────────────────────────────────────
+    function showTotalTime(section, ms) {
+      document.getElementById("total-time-value-" + section).textContent = ms + "ms";
+      document.getElementById("total-time-" + section).style.display = "block";
+      document.getElementById(section + "-status").textContent = "Complete";
+      document.getElementById("load-" + section + "-btn").disabled = false;
+
+      // Show comparison for parallel section
+      if (section === "parallel") {
+        document.getElementById("parallel-actual").textContent = ms + "ms";
+        document.getElementById("comparison-box").style.display = "flex";
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Clear Section
+    // ─────────────────────────────────────────────────────────────────────────────
+    function clearSection(section) {
+      var btn = document.getElementById("load-" + section + "-btn");
+      var status = document.getElementById(section + "-status");
+      btn.disabled = false;
+      status.textContent = "";
+      errorContainer.innerHTML = "";
+
+      if (section === "then" || section === "await") {
+        document.getElementById("user-panel-" + section).innerHTML = '<div class="panel-empty">Waiting for user data...</div>';
+        document.getElementById("posts-panel-" + section).innerHTML = '<div class="panel-empty">Waiting for posts...</div>';
+        document.getElementById("comments-panel-" + section).innerHTML = '<div class="panel-empty">Waiting for comments...</div>';
+        document.getElementById("total-time-" + section).style.display = "none";
+      } else if (section === "parallel") {
+        document.getElementById("users-posts-grid").innerHTML =
+          '<div class="empty-state" style="grid-column: 1 / -1;"><div class="empty-state-icon">⚡</div><p>Click to fetch all users\' posts in parallel</p></div>';
+        document.getElementById("total-time-parallel").style.display = "none";
+        document.getElementById("comparison-box").style.display = "none";
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Log Network Request
+    // ─────────────────────────────────────────────────────────────────────────────
+    function logRequest(method, url) {
+      var placeholder = networkLog.querySelector(".network-placeholder");
+      if (placeholder) placeholder.remove();
+
+      var entry = document.createElement("div");
+      entry.className = "network-entry";
+      var urlPath = url.replace(/^https?:\/\/[^/]+/, "");
+      entry.innerHTML =
+        '<span class="network-method">' + method + '</span>' +
+        '<span class="network-url">' + urlPath + '</span>' +
+        '<span class="network-status pending">⏳</span>' +
+        '<span class="network-time">...</span>';
+      networkLog.appendChild(entry);
+      networkLog.scrollTop = networkLog.scrollHeight;
+      return entry;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Update Log Entry
+    // ─────────────────────────────────────────────────────────────────────────────
+    function updateLogEntry(entry, status, duration) {
+      var statusEl = entry.querySelector(".network-status");
+      var timeEl = entry.querySelector(".network-time");
+      statusEl.className = "network-status " + (status >= 200 && status < 300 ? "success" : "error");
+      statusEl.textContent = String(status);
+      timeEl.textContent = duration + "ms";
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ✅ SOLUTION: Part A — fetch() + .then() chains
+    // ═══════════════════════════════════════════════════════════════════════════
+    function fetchProfileWithThen() {
+      showLoading("then");
+      var totalStart = Date.now();
+      var currentUser = null;
+      var currentPosts = null;
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Step 1: Fetch the user
+      // ─────────────────────────────────────────────────────────────────────────
+      var log1 = logRequest("GET", API_BASE + "/users/1?delay=300");
+      var start1 = Date.now();
+
+      fetch(API_BASE + "/users/1?delay=300")
+        .then(function(response) {
+          // ─────────────────────────────────────────────────────────────────────
+          // CRITICAL: fetch() does NOT reject on HTTP errors!
+          // A 404 or 500 resolves successfully. You MUST check .ok
+          // ─────────────────────────────────────────────────────────────────────
+          if (!response.ok) {
+            throw new Error("User request failed: " + response.status);
+          }
+          return response.json();
+        })
+        .then(function(userData) {
+          updateLogEntry(log1, 200, Date.now() - start1);
+          currentUser = userData.data;
+          renderProfile(currentUser, "then");
+
+          // ───────────────────────────────────────────────────────────────────
+          // Step 2: Fetch posts
+          // Returning a fetch() here CONTINUES the chain
+          // The next .then() receives this fetch's response
+          // ───────────────────────────────────────────────────────────────────
+          var log2 = logRequest("GET", API_BASE + "/users/" + currentUser.id + "/posts?delay=300");
+          var start2 = Date.now();
+
+          return fetch(API_BASE + "/users/" + currentUser.id + "/posts?delay=300")
+            .then(function(r) {
+              if (!r.ok) throw new Error("Posts request failed: " + r.status);
+              updateLogEntry(log2, 200, Date.now() - start2);
+              return r.json();
+            });
+        })
+        .then(function(postsData) {
+          currentPosts = postsData.data;
+          renderPosts(currentPosts, "then");
+
+          // ───────────────────────────────────────────────────────────────────
+          // Step 3: Fetch comments on first post
+          // ───────────────────────────────────────────────────────────────────
+          if (currentPosts.length > 0) {
+            var log3 = logRequest("GET", API_BASE + "/posts/" + currentPosts[0].id + "/comments?delay=300");
+            var start3 = Date.now();
+
+            return fetch(API_BASE + "/posts/" + currentPosts[0].id + "/comments?delay=300")
+              .then(function(r) {
+                if (!r.ok) throw new Error("Comments request failed: " + r.status);
+                updateLogEntry(log3, 200, Date.now() - start3);
+                return r.json();
+              });
+          }
+          return { data: [] };
+        })
+        .then(function(commentsData) {
+          renderComments(commentsData.data, "then");
+          showTotalTime("then", Date.now() - totalStart);
+        })
+        .catch(function(err) {
+          // ─────────────────────────────────────────────────────────────────────
+          // ONE catch handles ALL errors from the entire chain
+          // This is much cleaner than scattered .fail() handlers
+          // ─────────────────────────────────────────────────────────────────────
+          showError(err.message);
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ✅ SOLUTION: Part B — async/await
+    // ═══════════════════════════════════════════════════════════════════════════
+    async function fetchProfileWithAwait() {
+      showLoading("await");
+      var totalStart = Date.now();
+
+      try {
+        // ─────────────────────────────────────────────────────────────────────
+        // Step 1: Fetch user
+        // Look how flat this is. No nesting. No .then().
+        // ─────────────────────────────────────────────────────────────────────
+        var log1 = logRequest("GET", API_BASE + "/users/1?delay=300");
+        var start1 = Date.now();
+
+        var userRes = await fetch(API_BASE + "/users/1?delay=300");
+        if (!userRes.ok) throw new Error("User request failed: " + userRes.status);
+
+        var userData = await userRes.json();
+        updateLogEntry(log1, 200, Date.now() - start1);
+
+        var user = userData.data;
+        renderProfile(user, "await");
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Step 2: Fetch posts
+        // It reads top to bottom like synchronous code
+        // ─────────────────────────────────────────────────────────────────────
+        var log2 = logRequest("GET", API_BASE + "/users/" + user.id + "/posts?delay=300");
+        var start2 = Date.now();
+
+        var postsRes = await fetch(API_BASE + "/users/" + user.id + "/posts?delay=300");
+        if (!postsRes.ok) throw new Error("Posts request failed: " + postsRes.status);
+
+        var postsData = await postsRes.json();
+        updateLogEntry(log2, 200, Date.now() - start2);
+
+        var posts = postsData.data;
+        renderPosts(posts, "await");
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Step 3: Fetch comments on first post
+        // ─────────────────────────────────────────────────────────────────────
+        if (posts.length > 0) {
+          var log3 = logRequest("GET", API_BASE + "/posts/" + posts[0].id + "/comments?delay=300");
+          var start3 = Date.now();
+
+          var commentsRes = await fetch(API_BASE + "/posts/" + posts[0].id + "/comments?delay=300");
+          if (!commentsRes.ok) throw new Error("Comments request failed: " + commentsRes.status);
+
+          var commentsData = await commentsRes.json();
+          updateLogEntry(log3, 200, Date.now() - start3);
+
+          renderComments(commentsData.data, "await");
+        } else {
+          renderComments([], "await");
+        }
+
+        showTotalTime("await", Date.now() - totalStart);
+
+      } catch (err) {
+        // ─────────────────────────────────────────────────────────────────────
+        // try/catch is familiar from regular JS
+        // Same ONE place for ALL errors
+        // ─────────────────────────────────────────────────────────────────────
+        showError(err.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ✅ SOLUTION: Part C — Promise.all for parallel requests
+    // ═══════════════════════════════════════════════════════════════════════════
+    async function fetchAllPostsParallel() {
+      showLoading("parallel");
+      var totalStart = Date.now();
+
+      try {
+        // ─────────────────────────────────────────────────────────────────────
+        // Step 1: Fetch all users first (we need the user IDs)
+        // This is still a sequential step — we need user data first
+        // ─────────────────────────────────────────────────────────────────────
+        var log0 = logRequest("GET", API_BASE + "/users?delay=300");
+        var start0 = Date.now();
+
+        var usersRes = await fetch(API_BASE + "/users?delay=300");
+        if (!usersRes.ok) throw new Error("Users request failed");
+
+        var usersData = await usersRes.json();
+        updateLogEntry(log0, 200, Date.now() - start0);
+
+        var users = usersData.data;
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Step 2: Create a fetch Promise for EACH user's posts
+        // These are INDEPENDENT — user 2's posts don't depend on user 1's posts
+        // So we can fire ALL of them at once!
+        // ─────────────────────────────────────────────────────────────────────
+        var postPromises = users.map(function(user) {
+          var url = API_BASE + "/users/" + user.id + "/posts?delay=300";
+          var logEntry = logRequest("GET", url);
+          var startTime = Date.now();
+
+          return fetch(url)
+            .then(function(r) {
+              if (!r.ok) throw new Error("Failed for user " + user.id);
+              return r.json();
+            })
+            .then(function(data) {
+              updateLogEntry(logEntry, 200, Date.now() - startTime);
+              return { user: user, posts: data.data };
+            });
+        });
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Step 3: Wait for ALL of them to complete
+        // Promise.all fires all requests in parallel and waits for all to resolve
+        // If ANY one fails, the entire Promise.all rejects
+        // ─────────────────────────────────────────────────────────────────────
+        var results = await Promise.all(postPromises);
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Step 4: Render results
+        // Look at the network panel — all 5 post requests fire at the SAME TIME
+        // Total time: ~600ms, not ~1800ms!
+        // ─────────────────────────────────────────────────────────────────────
+        renderAllUserPosts(results, "parallel");
+        showTotalTime("parallel", Date.now() - totalStart);
+
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+  </script>
+</body>
+</html>
