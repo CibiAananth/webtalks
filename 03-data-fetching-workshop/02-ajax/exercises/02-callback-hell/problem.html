@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercise 02: Callback Hell</title>
+  <!-- jQuery CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-hover: #1a1a26;
+      --border: #2a2a3a;
+      --text: #e4e4ef;
+      --text-muted: #6e6e82;
+      --accent: #6c63ff;
+      --accent-dim: rgba(108, 99, 255, 0.15);
+      --success: #4ade80;
+      --error: #f87171;
+      --warning: #facc15;
+      --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+      --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+    .banner { background: var(--accent-dim); border-bottom: 1px solid var(--accent); padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 0.875rem; }
+    .banner-path { color: var(--accent); }
+    .banner-tag { background: var(--accent); color: var(--bg); padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.05em; }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; }
+    h1 { font-size: 1.75rem; margin-bottom: 0.75rem; }
+    h1 span { color: var(--accent); }
+    h2 { font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text); }
+    h2 span { color: var(--accent); font-family: var(--font-mono); }
+    .description { color: var(--text-muted); margin-bottom: 2rem; font-size: 1rem; }
+    .network-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1.5rem; overflow: hidden; }
+    .network-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); }
+    .network-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    .network-body { max-height: 180px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.8rem; }
+    .network-entry { display: flex; align-items: center; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border); }
+    .network-entry:last-child { border-bottom: none; }
+    .network-method { color: var(--accent); font-weight: 600; width: 50px; }
+    .network-url { color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .network-status { width: 60px; text-align: right; }
+    .network-status.pending { color: #facc15; }
+    .network-status.success { color: var(--success); }
+    .network-status.error { color: var(--error); }
+    .network-time { width: 70px; text-align: right; color: var(--text-muted); }
+    .network-placeholder { padding: 1rem; color: var(--text-muted); font-style: italic; text-align: center; }
+    .section { margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; margin-bottom: 0; }
+    .section-header { margin-bottom: 1rem; }
+    .controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .btn { font-family: var(--font-mono); font-size: 0.875rem; padding: 0.625rem 1.25rem; border-radius: 6px; cursor: pointer; transition: all 0.15s ease; }
+    .btn-primary { background: var(--accent); color: white; border: none; }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--surface); color: var(--text); }
+    .status { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); }
+    .error-container { margin-bottom: 1.5rem; }
+    .error-banner { background: rgba(248, 113, 113, 0.1); border: 1px solid var(--error); border-radius: 6px; padding: 1rem; color: var(--error); font-family: var(--font-mono); font-size: 0.875rem; }
+    .user-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+    .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+    .empty-state-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .user-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 1rem; transition: border-color 0.15s ease; }
+    .user-card:hover { border-color: var(--accent); }
+    .user-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--surface-hover); }
+    .user-details h3 { font-size: 0.95rem; font-weight: 500; margin-bottom: 0.125rem; }
+    .user-email { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.25rem; }
+    .user-role { display: inline-block; background: var(--accent-dim); color: var(--accent); font-size: 0.7rem; padding: 0.125rem 0.5rem; border-radius: 4px; font-family: var(--font-mono); }
+    .profile-container { display: flex; flex-direction: column; gap: 1rem; }
+    .profile-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .panel-header { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; }
+    .panel-header .icon { font-size: 1rem; }
+    .panel-body { padding: 1rem; }
+    .panel-empty { text-align: center; padding: 2rem; color: var(--text-muted); font-style: italic; }
+    .profile-card { display: flex; align-items: center; gap: 1rem; }
+    .profile-card .avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--surface-hover); }
+    .profile-card .info h3 { font-size: 1.1rem; margin-bottom: 0.25rem; }
+    .profile-card .info .email { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.25rem; }
+    .profile-card .info .role { display: inline-block; background: var(--accent-dim); color: var(--accent); font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 4px; font-family: var(--font-mono); }
+    .posts-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .post-item { padding: 0.75rem; background: var(--surface-hover); border-radius: 6px; }
+    .post-item h4 { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.25rem; }
+    .post-item .date { color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono); }
+    .comments-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .comment-item { padding: 0.75rem; background: var(--surface-hover); border-radius: 6px; border-left: 3px solid var(--accent); }
+    .comment-item .author { font-size: 0.8rem; font-weight: 500; color: var(--accent); margin-bottom: 0.25rem; }
+    .comment-item .body { font-size: 0.85rem; color: var(--text-muted); }
+    .total-time { background: var(--accent-dim); border: 1px solid var(--accent); border-radius: 8px; padding: 1rem; text-align: center; margin-top: 1rem; }
+    .total-time-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem; font-family: var(--font-mono); }
+    .total-time-value { font-size: 1.5rem; font-weight: 600; color: var(--accent); font-family: var(--font-mono); }
+    .total-time-note { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+    .skeleton { background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; height: 76px; }
+    .skeleton-small { height: 48px; }
+    .skeleton-profile { height: 88px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <span class="banner-path">Data Fetching Workshop → Session 02 → Exercise 02</span>
+    <span class="banner-tag">PROBLEM</span>
+  </div>
+
+  <div class="container">
+    <h1><span>02.</span> Callback Hell</h1>
+    <p class="description">jQuery makes single requests easy. But what happens when you need <strong>dependent requests</strong> that must run in sequence?</p>
+
+    <div class="network-panel">
+      <div class="network-header"><div class="network-dot"></div><span>Network Activity</span></div>
+      <div class="network-body" id="network-log"><div class="network-placeholder">Waiting for requests...</div></div>
+    </div>
+
+    <div class="error-container" id="error-container"></div>
+
+    <div class="section">
+      <div class="section-header">
+        <h2><span>Part A</span> — Simple jQuery AJAX</h2>
+        <p class="description" style="margin-bottom: 1rem;">Raw XHR took 30 lines. jQuery's <code>$.get()</code> does it in 5.</p>
+      </div>
+      <div class="controls">
+        <button class="btn btn-primary" id="load-users-btn" onclick="fetchUsers()">Load Team</button>
+        <button class="btn btn-ghost" onclick="clearUsers()">Clear</button>
+        <span class="status" id="users-status"></span>
+      </div>
+      <div class="user-grid" id="user-grid">
+        <div class="empty-state"><div class="empty-state-icon">👆</div><p>Click Load Team to fetch users via jQuery $.get()</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h2><span>Part B</span> — Nested Callbacks (The Pyramid of Doom)</h2>
+        <p class="description" style="margin-bottom: 1rem;">Fetch user → then their posts → then comments on the first post. Each request depends on the previous. Watch the waterfall in the Network panel.</p>
+      </div>
+      <div class="controls">
+        <button class="btn btn-primary" id="load-profile-btn" onclick="fetchUserProfile()">Load User Profile</button>
+        <button class="btn btn-ghost" onclick="clearProfile()">Clear</button>
+        <span class="status" id="profile-status"></span>
+      </div>
+      <div class="profile-container" id="profile-container">
+        <div class="profile-panel"><div class="panel-header"><span class="icon">👤</span><span>User Info</span></div><div class="panel-body" id="user-panel"><div class="panel-empty">Waiting for user data...</div></div></div>
+        <div class="profile-panel"><div class="panel-header"><span class="icon">📝</span><span>Posts</span></div><div class="panel-body" id="posts-panel"><div class="panel-empty">Waiting for posts...</div></div></div>
+        <div class="profile-panel"><div class="panel-header"><span class="icon">💬</span><span>Comments on First Post</span></div><div class="panel-body" id="comments-panel"><div class="panel-empty">Waiting for comments...</div></div></div>
+      </div>
+      <div class="total-time" id="total-time" style="display: none;">
+        <div class="total-time-label">Total Waterfall Time</div>
+        <div class="total-time-value" id="total-time-value">—</div>
+        <div class="total-time-note">3 sequential requests × ~300ms each</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var API_BASE = "http://localhost:3069/api";
+    var loadUsersBtn = document.getElementById("load-users-btn");
+    var loadProfileBtn = document.getElementById("load-profile-btn");
+    var usersStatus = document.getElementById("users-status");
+    var profileStatus = document.getElementById("profile-status");
+    var errorContainer = document.getElementById("error-container");
+    var userGrid = document.getElementById("user-grid");
+    var networkLog = document.getElementById("network-log");
+    var userPanel = document.getElementById("user-panel");
+    var postsPanel = document.getElementById("posts-panel");
+    var commentsPanel = document.getElementById("comments-panel");
+    var totalTimeEl = document.getElementById("total-time");
+    var totalTimeValue = document.getElementById("total-time-value");
+
+    function renderUsers(users) {
+      if (!users || users.length === 0) { userGrid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🤷</div><p>No users found</p></div>'; usersStatus.textContent = "No users"; loadUsersBtn.disabled = false; return; }
+      userGrid.innerHTML = users.map(function(user) { return '<div class="user-card"><img class="user-avatar" src="' + user.avatar + '" alt="' + user.name + '"><div class="user-details"><h3>' + user.name + '</h3><div class="user-email">' + user.email + '</div><span class="user-role">' + user.role + '</span></div></div>'; }).join("");
+      usersStatus.textContent = "Loaded " + users.length + " users"; loadUsersBtn.disabled = false;
+    }
+
+    function renderProfile(user) {
+      userPanel.innerHTML = '<div class="profile-card"><img class="avatar" src="' + user.avatar + '" alt="' + user.name + '"><div class="info"><h3>' + user.name + '</h3><div class="email">' + user.email + '</div><span class="role">' + user.role + '</span></div></div>';
+    }
+
+    function renderPosts(posts) {
+      if (!posts || posts.length === 0) { postsPanel.innerHTML = '<div class="panel-empty">No posts found</div>'; return; }
+      postsPanel.innerHTML = '<div class="posts-list">' + posts.map(function(post) { return '<div class="post-item"><h4>' + post.title + '</h4><div class="date">' + post.createdAt + '</div></div>'; }).join("") + '</div>';
+    }
+
+    function renderComments(comments) {
+      if (!comments || comments.length === 0) { commentsPanel.innerHTML = '<div class="panel-empty">No comments on this post</div>'; return; }
+      commentsPanel.innerHTML = '<div class="comments-list">' + comments.map(function(comment) { return '<div class="comment-item"><div class="author">User #' + comment.userId + '</div><div class="body">' + comment.body + '</div></div>'; }).join("") + '</div>';
+    }
+
+    function showLoading() { loadUsersBtn.disabled = true; usersStatus.textContent = "Fetching..."; errorContainer.innerHTML = ""; userGrid.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>'; }
+    function showProfileLoading() { loadProfileBtn.disabled = true; profileStatus.textContent = "Fetching..."; errorContainer.innerHTML = ""; userPanel.innerHTML = '<div class="skeleton skeleton-profile"></div>'; postsPanel.innerHTML = '<div class="skeleton skeleton-small"></div><div class="skeleton skeleton-small"></div>'; commentsPanel.innerHTML = '<div class="skeleton skeleton-small"></div>'; totalTimeEl.style.display = "none"; }
+    function showError(message) { errorContainer.innerHTML = '<div class="error-banner">' + message + '</div>'; loadUsersBtn.disabled = false; loadProfileBtn.disabled = false; }
+    function clearUsers() { userGrid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👆</div><p>Click Load Team to fetch users via jQuery $.get()</p></div>'; usersStatus.textContent = ""; errorContainer.innerHTML = ""; loadUsersBtn.disabled = false; }
+    function clearProfile() { userPanel.innerHTML = '<div class="panel-empty">Waiting for user data...</div>'; postsPanel.innerHTML = '<div class="panel-empty">Waiting for posts...</div>'; commentsPanel.innerHTML = '<div class="panel-empty">Waiting for comments...</div>'; profileStatus.textContent = ""; errorContainer.innerHTML = ""; totalTimeEl.style.display = "none"; loadProfileBtn.disabled = false; }
+    function showTotalTime(ms) { totalTimeValue.textContent = ms + "ms"; totalTimeEl.style.display = "block"; profileStatus.textContent = "Complete"; loadProfileBtn.disabled = false; }
+
+    function logRequest(method, url, status, duration) {
+      var placeholder = networkLog.querySelector(".network-placeholder"); if (placeholder) { placeholder.remove(); }
+      var entry = document.createElement("div"); entry.className = "network-entry";
+      var urlPath = url.replace(/^https?:\/\/[^/]+/, "");
+      var statusClass = "pending"; var statusText = "⏳";
+      if (status !== undefined) { statusClass = status >= 200 && status < 300 ? "success" : "error"; statusText = String(status); }
+      entry.innerHTML = '<span class="network-method">' + method + '</span><span class="network-url">' + urlPath + '</span><span class="network-status ' + statusClass + '">' + statusText + '</span><span class="network-time">' + (duration !== undefined ? duration + "ms" : "...") + '</span>';
+      networkLog.appendChild(entry); networkLog.scrollTop = networkLog.scrollHeight; return entry;
+    }
+
+    function updateLogEntry(entry, status, duration) {
+      var statusEl = entry.querySelector(".network-status"); var timeEl = entry.querySelector(".network-time");
+      statusEl.className = "network-status " + (status >= 200 && status < 300 ? "success" : "error");
+      statusEl.textContent = String(status); timeEl.textContent = duration + "ms";
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // TODO: Implement fetchUsers() — Part A
+    // ─────────────────────────────────────────────────────────────────────────────
+    function fetchUsers() {
+      // ❌ TODO: Fetch users using jQuery $.get()
+      // 1. showLoading()
+      // 2. var logEntry = logRequest("GET", API_BASE + "/users?delay=300")
+      // 3. var startTime = Date.now()
+      // 4. $.get(API_BASE + "/users?delay=300", function(response) { ... })
+      // 5. In callback: updateLogEntry(logEntry, 200, Date.now() - startTime), renderUsers(response.data)
+      // 6. .fail(function(xhr) { updateLogEntry(...), showError(...) })
+      console.log("fetchUsers() — not implemented yet");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // TODO: Implement fetchUserProfile() — Part B
+    // ─────────────────────────────────────────────────────────────────────────────
+    function fetchUserProfile() {
+      // ❌ TODO: Fetch user → posts → comments using NESTED CALLBACKS
+      // This creates the "pyramid of doom" - each $.get is INSIDE the previous callback
+      //
+      // showProfileLoading(); var totalStart = Date.now();
+      //
+      // $.get("/users/1", function(userResp) {
+      //   renderProfile(userResp.data);
+      //   $.get("/users/" + user.id + "/posts", function(postsResp) {
+      //     renderPosts(postsResp.data);
+      //     $.get("/posts/" + posts[0].id + "/comments", function(commentsResp) {
+      //       renderComments(commentsResp.data);
+      //       showTotalTime(Date.now() - totalStart);
+      //     }).fail(...);
+      //   }).fail(...);
+      // }).fail(...);
+      console.log("fetchUserProfile() — not implemented yet");
+    }
+  </script>
+</body>
+</html>

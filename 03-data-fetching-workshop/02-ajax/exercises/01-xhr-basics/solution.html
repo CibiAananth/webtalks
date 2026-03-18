@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercise 01: XMLHttpRequest Basics — Solution</title>
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       CSS Variables
+       ═══════════════════════════════════════════════════════════════════════════ */
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface-hover: #1a1a26;
+      --border: #2a2a3a;
+      --text: #e4e4ef;
+      --text-muted: #6e6e82;
+      --accent: #6c63ff;
+      --accent-dim: rgba(108, 99, 255, 0.15);
+      --success: #4ade80;
+      --error: #f87171;
+      --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+      --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Reset & Base
+       ═══════════════════════════════════════════════════════════════════════════ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Top Banner (Solution - Green themed)
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .banner {
+      background: rgba(74, 222, 128, 0.1);
+      border-bottom: 1px solid var(--success);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+    }
+
+    .banner-path {
+      color: var(--success);
+    }
+
+    .banner-tag {
+      background: var(--success);
+      color: var(--bg);
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Container
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 span {
+      color: var(--success);
+    }
+
+    .description {
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Annotation Block (Solution explanation)
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .annotation {
+      background: rgba(74, 222, 128, 0.08);
+      border-left: 3px solid var(--success);
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .annotation-title {
+      color: var(--success);
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin-bottom: 0.5rem;
+      font-family: var(--font-mono);
+    }
+
+    .annotation p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .annotation code {
+      background: rgba(74, 222, 128, 0.15);
+      color: var(--success);
+      padding: 0.125rem 0.375rem;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Network Activity Panel
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .network-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .network-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .network-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    .network-body {
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .network-entry {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .network-entry:last-child {
+      border-bottom: none;
+    }
+
+    .network-method {
+      color: var(--accent);
+      font-weight: 600;
+      width: 50px;
+    }
+
+    .network-url {
+      color: var(--text-muted);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .network-status {
+      width: 60px;
+      text-align: right;
+    }
+
+    .network-status.pending {
+      color: #facc15;
+    }
+
+    .network-status.success {
+      color: var(--success);
+    }
+
+    .network-status.error {
+      color: var(--error);
+    }
+
+    .network-time {
+      width: 70px;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    .network-placeholder {
+      padding: 1rem;
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Controls
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .status {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Error Container
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .error-container {
+      margin-bottom: 1.5rem;
+    }
+
+    .error-banner {
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid var(--error);
+      border-radius: 6px;
+      padding: 1rem;
+      color: var(--error);
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       User Grid
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .user-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .user-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color 0.15s ease;
+    }
+
+    .user-card:hover {
+      border-color: var(--accent);
+    }
+
+    .user-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--surface-hover);
+    }
+
+    .user-details h3 {
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 0.125rem;
+    }
+
+    .user-email {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .user-role {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--accent);
+      font-size: 0.7rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════════
+       Loading Skeletons
+       ═══════════════════════════════════════════════════════════════════════════ */
+    .skeleton {
+      background: linear-gradient(
+        90deg,
+        var(--surface) 25%,
+        var(--surface-hover) 50%,
+        var(--surface) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+      height: 76px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       Top Banner (Green - Solution)
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div class="banner">
+    <span class="banner-path">Data Fetching Workshop → Session 02 → Exercise 01</span>
+    <span class="banner-tag">SOLUTION</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       Main Content
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <div class="container">
+    <h1><span>01.</span> XMLHttpRequest Basics — Solution</h1>
+    <p class="description">
+      Complete the <code>fetchUsers()</code> function to load team members using raw XMLHttpRequest.
+      Open DevTools Network tab to observe the request.
+    </p>
+
+    <!-- Annotation Block -->
+    <div class="annotation">
+      <div class="annotation-title">What's happening here</div>
+      <p>
+        This solution uses <code>XMLHttpRequest</code> to fetch data without reloading the page.
+        The key flow is: create XHR → configure with <code>open()</code> → set up
+        <code>onreadystatechange</code> handler → <code>send()</code> the request. The handler
+        watches for <code>readyState === 4</code> (complete) and <code>status === 200</code> (success),
+        then parses the JSON response and updates the DOM. This pattern was revolutionary in 2005!
+      </p>
+    </div>
+
+    <!-- Network Activity Panel -->
+    <div class="network-panel">
+      <div class="network-header">
+        <div class="network-dot"></div>
+        <span>Network Activity</span>
+      </div>
+      <div class="network-body" id="network-log">
+        <div class="network-placeholder">Waiting for requests...</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-primary" id="load-btn" onclick="fetchUsers()">
+        Load Team
+      </button>
+      <button class="btn btn-ghost" onclick="clearUsers()">
+        Clear
+      </button>
+      <span class="status" id="status"></span>
+    </div>
+
+    <!-- Error Container -->
+    <div class="error-container" id="error-container"></div>
+
+    <!-- User Grid -->
+    <div class="user-grid" id="user-grid">
+      <div class="empty-state">
+        <div class="empty-state-icon">👆</div>
+        <p>Click Load Team to fetch users via XMLHttpRequest</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════════
+       JavaScript
+       ═══════════════════════════════════════════════════════════════════════════ -->
+  <script>
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Configuration
+    // ─────────────────────────────────────────────────────────────────────────────
+    const API_URL = "http://localhost:3069/api/users?delay=300";
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // DOM References
+    // ─────────────────────────────────────────────────────────────────────────────
+    const loadBtn = document.getElementById("load-btn");
+    const statusEl = document.getElementById("status");
+    const errorContainer = document.getElementById("error-container");
+    const userGrid = document.getElementById("user-grid");
+    const networkLog = document.getElementById("network-log");
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Render Users
+    // ─────────────────────────────────────────────────────────────────────────────
+    function renderUsers(users) {
+      if (!users || users.length === 0) {
+        userGrid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">🤷</div>
+            <p>No users found</p>
+          </div>
+        `;
+        statusEl.textContent = "No users";
+        loadBtn.disabled = false;
+        return;
+      }
+
+      userGrid.innerHTML = users.map(user => `
+        <div class="user-card">
+          <img class="user-avatar" src="${user.avatar}" alt="${user.name}">
+          <div class="user-details">
+            <h3>${user.name}</h3>
+            <div class="user-email">${user.email}</div>
+            <span class="user-role">${user.role}</span>
+          </div>
+        </div>
+      `).join("");
+
+      statusEl.textContent = `Loaded ${users.length} users`;
+      loadBtn.disabled = false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Show Loading State
+    // ─────────────────────────────────────────────────────────────────────────────
+    function showLoading() {
+      loadBtn.disabled = true;
+      statusEl.textContent = "Fetching...";
+      errorContainer.innerHTML = "";
+      userGrid.innerHTML = `
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+      `;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Show Error
+    // ─────────────────────────────────────────────────────────────────────────────
+    function showError(message) {
+      errorContainer.innerHTML = `
+        <div class="error-banner">${message}</div>
+      `;
+      statusEl.textContent = "Error";
+      loadBtn.disabled = false;
+      userGrid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">💥</div>
+          <p>Failed to load users</p>
+        </div>
+      `;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Clear Users
+    // ─────────────────────────────────────────────────────────────────────────────
+    function clearUsers() {
+      userGrid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">👆</div>
+          <p>Click Load Team to fetch users via XMLHttpRequest</p>
+        </div>
+      `;
+      statusEl.textContent = "";
+      errorContainer.innerHTML = "";
+      loadBtn.disabled = false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Log Network Request
+    // ─────────────────────────────────────────────────────────────────────────────
+    function logRequest(method, url, status, duration) {
+      // Clear placeholder on first request
+      const placeholder = networkLog.querySelector(".network-placeholder");
+      if (placeholder) {
+        placeholder.remove();
+      }
+
+      const entry = document.createElement("div");
+      entry.className = "network-entry";
+
+      const urlPath = url.replace(/^https?:\/\/[^/]+/, "");
+
+      let statusClass = "pending";
+      let statusText = "⏳";
+      if (status !== undefined) {
+        statusClass = status >= 200 && status < 300 ? "success" : "error";
+        statusText = String(status);
+      }
+
+      entry.innerHTML = `
+        <span class="network-method">${method}</span>
+        <span class="network-url">${urlPath}</span>
+        <span class="network-status ${statusClass}">${statusText}</span>
+        <span class="network-time">${duration !== undefined ? duration + "ms" : "..."}</span>
+      `;
+
+      networkLog.appendChild(entry);
+      networkLog.scrollTop = networkLog.scrollHeight;
+
+      return entry;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Helper: Update Log Entry
+    // ─────────────────────────────────────────────────────────────────────────────
+    function updateLogEntry(entry, status, duration) {
+      const statusEl = entry.querySelector(".network-status");
+      const timeEl = entry.querySelector(".network-time");
+
+      statusEl.className = "network-status " + (status >= 200 && status < 300 ? "success" : "error");
+      statusEl.textContent = String(status);
+      timeEl.textContent = duration + "ms";
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ✅ SOLUTION: fetchUsers() with XMLHttpRequest
+    // ─────────────────────────────────────────────────────────────────────────────
+    function fetchUsers() {
+      // ─────────────────────────────────────────────────────────────────────────
+      // Step 1: Show loading state immediately
+      // This gives the user instant feedback that something is happening.
+      // Never leave users wondering if their click registered!
+      // ─────────────────────────────────────────────────────────────────────────
+      showLoading();
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Step 2: Create the XMLHttpRequest object
+      // This is the browser's built-in way to make HTTP requests from JavaScript.
+      // It was introduced in IE5 (1999) and standardized across browsers by 2006.
+      // The name is misleading — it can fetch any data, not just XML!
+      // ─────────────────────────────────────────────────────────────────────────
+      const xhr = new XMLHttpRequest();
+
+      // Track timing so we can show how long the request took
+      const startTime = Date.now();
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Step 3: Configure the request with open()
+      // open(method, url) sets up the request but does NOT send it yet.
+      // Think of it like addressing an envelope — you specify where it's going,
+      // but you haven't dropped it in the mailbox yet.
+      // ─────────────────────────────────────────────────────────────────────────
+      xhr.open("GET", API_URL);
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Step 4: Set up the response handler
+      // onreadystatechange fires every time the request's state changes.
+      // The readyState property tells us where we are in the request lifecycle:
+      //
+      //   0 = UNSENT      - open() hasn't been called yet
+      //   1 = OPENED      - open() called, ready to send
+      //   2 = HEADERS_RECEIVED - send() called, headers received
+      //   3 = LOADING     - response body is loading (may fire multiple times!)
+      //   4 = DONE        - request complete (success OR failure)
+      //
+      // We only care about readyState 4, but even then we need to check status!
+      // ─────────────────────────────────────────────────────────────────────────
+      xhr.onreadystatechange = function() {
+        // Only proceed when the request is fully complete
+        if (xhr.readyState === 4) {
+          const duration = Date.now() - startTime;
+
+          // ───────────────────────────────────────────────────────────────────
+          // IMPORTANT: readyState 4 does NOT mean success!
+          // It just means the request is "done" — it could be a 404, 500, etc.
+          // We must check the HTTP status code separately.
+          // ───────────────────────────────────────────────────────────────────
+          if (xhr.status === 200) {
+            // Success! The server returned a 200 OK response.
+            try {
+              // ─────────────────────────────────────────────────────────────────
+              // Parse the JSON response
+              // xhr.responseText contains the raw response body as a string.
+              // Our API returns JSON like: { data: [...users], total: 5 }
+              // We need JSON.parse() to convert that string to a JS object.
+              // ─────────────────────────────────────────────────────────────────
+              const response = JSON.parse(xhr.responseText);
+
+              // Update the network log with success
+              updateLogEntry(logEntry, xhr.status, duration);
+
+              // Render the users to the page
+              renderUsers(response.data);
+
+            } catch (parseError) {
+              // JSON.parse() can throw if the response isn't valid JSON
+              updateLogEntry(logEntry, xhr.status, duration);
+              showError("Failed to parse server response as JSON");
+            }
+          } else {
+            // ─────────────────────────────────────────────────────────────────
+            // Non-200 status: something went wrong
+            // Common codes: 400 (bad request), 404 (not found), 500 (server error)
+            // ─────────────────────────────────────────────────────────────────
+            updateLogEntry(logEntry, xhr.status, duration);
+            showError(`Request failed with status ${xhr.status}`);
+          }
+        }
+      };
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Step 5: Send the request
+      // For GET requests, send() takes no arguments (or null).
+      // For POST/PUT, you'd pass the request body: xhr.send(JSON.stringify(data))
+      // This is when the request actually goes out to the network!
+      // ─────────────────────────────────────────────────────────────────────────
+      xhr.send();
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // Step 6: Log the request (shows pending state)
+      // We log AFTER calling send() so the timing starts correctly.
+      // The log entry starts in "pending" state and gets updated when the
+      // response arrives in onreadystatechange.
+      // ─────────────────────────────────────────────────────────────────────────
+      const logEntry = logRequest("GET", API_URL);
+    }
+  </script>
+</body>
+</html>
