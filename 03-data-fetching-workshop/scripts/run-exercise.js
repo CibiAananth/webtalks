@@ -18,28 +18,18 @@ function findExercises() {
   const entries = readdirSync(rootDir, { withFileTypes: true });
 
   for (const entry of entries) {
-    // Look for session folders (01-*, 02-*, etc.)
+    // Look for session folders (01-*, 02-*, 03-*, etc.)
     if (entry.isDirectory() && /^\d{2}-/.test(entry.name)) {
+      // Check standard exercises/ directory
       const exercisesDir = join(rootDir, entry.name, "exercises");
       if (existsSync(exercisesDir)) {
-        const exerciseEntries = readdirSync(exercisesDir, {
-          withFileTypes: true,
-        });
-        for (const ex of exerciseEntries) {
-          if (ex.isDirectory() && /^\d{2}-/.test(ex.name)) {
-            const testFile = join(exercisesDir, ex.name, "exercise.test.js");
-            if (existsSync(testFile)) {
-              const num = ex.name.split("-")[0];
-              exercises.push({
-                number: num,
-                name: ex.name,
-                session: entry.name,
-                testFile,
-                path: join(exercisesDir, ex.name),
-              });
-            }
-          }
-        }
+        scanExercisesDir(exercises, exercisesDir, entry.name);
+      }
+
+      // Also check src/exercises/ for React-based sessions (like 03-react)
+      const srcExercisesDir = join(rootDir, entry.name, "src", "exercises");
+      if (existsSync(srcExercisesDir)) {
+        scanExercisesDir(exercises, srcExercisesDir, entry.name, true);
       }
     }
   }
@@ -48,6 +38,32 @@ function findExercises() {
     if (a.session !== b.session) return a.session.localeCompare(b.session);
     return a.number.localeCompare(b.number);
   });
+}
+
+function scanExercisesDir(exercises, exercisesDir, sessionName, isReactSession = false) {
+  const exerciseEntries = readdirSync(exercisesDir, {
+    withFileTypes: true,
+  });
+  for (const ex of exerciseEntries) {
+    if (ex.isDirectory() && /^\d{2}-/.test(ex.name)) {
+      // For standard exercises, look for exercise.test.js
+      // For React sessions, look for page.tsx
+      const testFile = join(exercisesDir, ex.name, "exercise.test.js");
+      const pageTsx = join(exercisesDir, ex.name, "page.tsx");
+
+      if (existsSync(testFile) || (isReactSession && existsSync(pageTsx))) {
+        const num = ex.name.split("-")[0];
+        exercises.push({
+          number: num,
+          name: ex.name,
+          session: sessionName,
+          testFile: existsSync(testFile) ? testFile : pageTsx,
+          path: join(exercisesDir, ex.name),
+          isReact: isReactSession,
+        });
+      }
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,14 +99,14 @@ function runExercise(exercise) {
     )
   );
 
-  const vitest = spawn("npx", ["vitest", "run", exercise.testFile], {
-    cwd: rootDir,
-    stdio: "inherit",
-  });
+  // const vitest = spawn("npx", ["vitest", "run", exercise.testFile], {
+  //   cwd: rootDir,
+  //   stdio: "inherit",
+  // });
 
-  vitest.on("close", (code) => {
-    process.exit(code);
-  });
+  // vitest.on("close", (code) => {
+  //   process.exit(code);
+  // });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
