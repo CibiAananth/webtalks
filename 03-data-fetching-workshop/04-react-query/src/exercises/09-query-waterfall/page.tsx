@@ -26,12 +26,12 @@ interface WaterfallBar {
 
 function UseEffectUserInfo({
   userId,
-  onLoad,
-  onRenderChildren,
+  onUserLoaded,
+  children,
 }: {
   userId: number;
-  onLoad: (user: User) => void;
-  onRenderChildren: () => React.ReactNode;
+  onUserLoaded: () => void;
+  children: React.ReactNode;
 }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,9 +44,10 @@ function UseEffectUserInfo({
       .then((data: ApiResponse<User>) => {
         setUser(data.data);
         setIsLoading(false);
-        onLoad(data.data);
+        onUserLoaded();
       });
-  }, [userId, trackedFetch, onLoad]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, trackedFetch]);
 
   if (isLoading) return <Skeleton count={1} height={80} />;
   if (!user) return null;
@@ -54,19 +55,19 @@ function UseEffectUserInfo({
   return (
     <>
       <UserCard user={user} />
-      {onRenderChildren()}
+      {children}
     </>
   );
 }
 
 function UseEffectPosts({
   userId,
-  onLoad,
-  onRenderChildren,
+  onPostsLoaded,
+  onFirstPostId,
 }: {
   userId: number;
-  onLoad: (posts: Post[]) => void;
-  onRenderChildren: (firstPostId: number) => React.ReactNode;
+  onPostsLoaded: () => void;
+  onFirstPostId: (postId: number) => void;
 }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,30 +80,32 @@ function UseEffectPosts({
       .then((data: ApiResponse<Post[]>) => {
         setPosts(data.data);
         setIsLoading(false);
-        onLoad(data.data);
+        onPostsLoaded();
+        if (data.data[0]) {
+          onFirstPostId(data.data[0].id);
+        }
       });
-  }, [userId, trackedFetch, onLoad]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, trackedFetch]);
 
   if (isLoading) return <Skeleton count={2} height={60} />;
 
-  const firstPost = posts[0];
   return (
     <div style={{ marginTop: "1rem" }}>
       <h3 style={{ marginBottom: "0.75rem" }}>Posts</h3>
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
-      {firstPost && onRenderChildren(firstPost.id)}
     </div>
   );
 }
 
 function UseEffectComments({
   postId,
-  onLoad,
+  onCommentsLoaded,
 }: {
   postId: number;
-  onLoad: (comments: Comment[]) => void;
+  onCommentsLoaded: () => void;
 }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -115,9 +118,10 @@ function UseEffectComments({
       .then((data: ApiResponse<Comment[]>) => {
         setComments(data.data);
         setIsLoading(false);
-        onLoad(data.data);
+        onCommentsLoaded();
       });
-  }, [postId, trackedFetch, onLoad]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId, trackedFetch]);
 
   if (isLoading) return <Skeleton count={2} height={40} />;
 
@@ -147,62 +151,52 @@ function UseEffectProfile({
   onWaterfallUpdate: (bars: WaterfallBar[], total: number) => void;
 }) {
   const [totalStart] = useState(Date.now());
-  const [bars, setBars] = useState<WaterfallBar[]>([]);
+  const [userLoaded, setUserLoaded] = useState(false);
+  const [postsLoaded, setPostsLoaded] = useState(false);
+  const [firstPostId, setFirstPostId] = useState<number | null>(null);
+  const [userDuration, setUserDuration] = useState(0);
+  const [postsDuration, setPostsDuration] = useState(0);
 
-  const handleUserLoad = () => {
-    setBars((prev) => [
-      ...prev,
-      {
-        label: `GET /users/${userId}`,
-        start: 0,
-        duration: Date.now() - totalStart,
-        color: "#6c63ff",
-      },
-    ]);
-  };
+  const handleUserLoaded = useCallback(() => {
+    const duration = Date.now() - totalStart;
+    setUserDuration(duration);
+    setUserLoaded(true);
+  }, [totalStart]);
 
-  const handlePostsLoad = () => {
-    const userDuration = bars[0]?.duration ?? 800;
-    setBars((prev) => [
-      ...prev,
-      {
-        label: `GET /users/${userId}/posts`,
-        start: userDuration,
-        duration: Date.now() - totalStart - userDuration,
-        color: "#4ade80",
-      },
-    ]);
-  };
+  const handlePostsLoaded = useCallback(() => {
+    const duration = Date.now() - totalStart - userDuration;
+    setPostsDuration(duration);
+    setPostsLoaded(true);
+  }, [totalStart, userDuration]);
 
-  const handleCommentsLoad = () => {
+  const handleFirstPostId = useCallback((postId: number) => {
+    setFirstPostId(postId);
+  }, []);
+
+  const handleCommentsLoaded = useCallback(() => {
     const total = Date.now() - totalStart;
-    const postsDuration = (bars[1]?.start ?? 0) + (bars[1]?.duration ?? 800);
-    const newBars = [
-      ...bars,
-      {
-        label: "GET /posts/1/comments",
-        start: postsDuration,
-        duration: total - postsDuration,
-        color: "#fbbf24",
-      },
+    const commentsStart = userDuration + postsDuration;
+    const bars: WaterfallBar[] = [
+      { label: `GET /users/${userId}`, start: 0, duration: userDuration, color: "#6c63ff" },
+      { label: `GET /users/${userId}/posts`, start: userDuration, duration: postsDuration, color: "#4ade80" },
+      { label: "GET /posts/1/comments", start: commentsStart, duration: total - commentsStart, color: "#fbbf24" },
     ];
-    onWaterfallUpdate(newBars, total);
-  };
+    onWaterfallUpdate(bars, total);
+  }, [userId, userDuration, postsDuration, totalStart, onWaterfallUpdate]);
 
   return (
-    <UseEffectUserInfo
-      userId={userId}
-      onLoad={handleUserLoad}
-      onRenderChildren={() => (
+    <UseEffectUserInfo userId={userId} onUserLoaded={handleUserLoaded}>
+      {userLoaded && (
         <UseEffectPosts
           userId={userId}
-          onLoad={handlePostsLoad}
-          onRenderChildren={(firstPostId) => (
-            <UseEffectComments postId={firstPostId} onLoad={handleCommentsLoad} />
-          )}
+          onPostsLoaded={handlePostsLoaded}
+          onFirstPostId={handleFirstPostId}
         />
       )}
-    />
+      {postsLoaded && firstPostId && (
+        <UseEffectComments postId={firstPostId} onCommentsLoaded={handleCommentsLoaded} />
+      )}
+    </UseEffectUserInfo>
   );
 }
 
@@ -323,7 +317,8 @@ function QueryProfile({
       setReported(true);
       onWaterfallUpdate(bars, total);
     }
-  }, [requestLog, userId, reported, started, onWaterfallUpdate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestLog, userId, reported]);
 
   return (
     <QueryUserInfo
@@ -382,7 +377,8 @@ function ParallelProfile({
       ];
       onWaterfallUpdate(bars, duration);
     });
-  }, [userId, trackedFetch, onWaterfallUpdate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, trackedFetch]);
 
   if (isLoading) return <Skeleton count={5} height={60} />;
   if (!user) return null;
