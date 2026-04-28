@@ -42,7 +42,7 @@ export function usePostComments(postId: number | undefined, delay = 800) {
 // useSuspenseQuery hooks
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function useSuspenseUser(userId: number, delay = 800) {
+export function useSuspenseUser(userId: number, delay = 2000) {
   const { trackedFetch } = useNetwork();
   const fetchers = createTrackedFetchers(trackedFetch);
 
@@ -52,7 +52,7 @@ export function useSuspenseUser(userId: number, delay = 800) {
   });
 }
 
-export function useSuspenseUserPosts(userId: number, delay = 800) {
+export function useSuspenseUserPosts(userId: number, delay = 1200) {
   const { trackedFetch } = useNetwork();
   const fetchers = createTrackedFetchers(trackedFetch);
 
@@ -62,7 +62,7 @@ export function useSuspenseUserPosts(userId: number, delay = 800) {
   });
 }
 
-export function useSuspensePostComments(postId: number, delay = 800) {
+export function useSuspensePostComments(postId: number, delay = 3000) {
   const { trackedFetch } = useNetwork();
   const fetchers = createTrackedFetchers(trackedFetch);
 
