@@ -112,8 +112,7 @@ export default function StaleCacheBug() {
         <strong>No cache, no memory.</strong> Every mount is a fresh start. The component
         forgets everything when it unmounts. Navigate to User 1 ten times, make ten
         requests. On mobile with slow networks, this means a loading spinner every time
-        you go back. React Query's <code>staleTime</code> and cache solve this — show
-        cached data instantly while refetching in the background.
+        you go back.
       </div>
     </div>
   );

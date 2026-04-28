@@ -24,8 +24,6 @@ const API_BASE = "http://localhost:3069/api";
 //   (define an async function inside and call it)
 
 function UserProfileProblem() {
-  // TODO: Add your code here
-
   const user: User | null = null;
 
   if (!user) {

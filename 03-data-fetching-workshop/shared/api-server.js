@@ -196,7 +196,17 @@ app.get("/api/posts/:id/comments", delayMiddleware, (req, res) => {
   if (!post) {
     return res.status(404).json({ error: "Post not found" });
   }
-  const postComments = comments.filter((c) => c.postId === postId);
+  const postComments = comments
+    .filter((c) => c.postId === postId)
+    .map((c) => {
+      const user = users.find((u) => u.id === c.userId);
+      return {
+        id: c.id,
+        postId: c.postId,
+        author: user ? user.name : "Unknown",
+        text: c.body,
+      };
+    });
   res.json({ data: postComments });
 });
 

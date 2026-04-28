@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import RequestLog from "../../components/RequestLog";
 import WaterfallChart from "../../components/WaterfallChart";
 import UserCard from "../../components/UserCard";
@@ -90,6 +90,16 @@ export default function Exercise08() {
   const [showSolution, setShowSolution] = useState(false);
   const [key, setKey] = useState(0);
 
+  const handleProblemWaterfallUpdate = useCallback((bars: WaterfallBar[], total: number) => {
+    setProblemBars(bars);
+    setProblemTime(total);
+  }, []);
+
+  const handleSolutionWaterfallUpdate = useCallback((bars: WaterfallBar[], total: number) => {
+    setSolutionBars(bars);
+    setSolutionTime(total);
+  }, []);
+
   return (
     <div className="exercise-container">
       <h1><span className="accent">08.</span> Lifting Fetch Up</h1>
@@ -118,7 +128,7 @@ export default function Exercise08() {
               <ProfilePageProblem
                 key={"problem-" + key}
                 userId={1}
-                onWaterfallUpdate={(bars, total) => { setProblemBars(bars); setProblemTime(total); }}
+                onWaterfallUpdate={handleProblemWaterfallUpdate}
               />
             </div>
           </div>
@@ -134,7 +144,7 @@ export default function Exercise08() {
                   <ProfilePageSolution
                     key={"solution-" + key}
                     userId={1}
-                    onWaterfallUpdate={(bars, total) => { setSolutionBars(bars); setSolutionTime(total); }}
+                    onWaterfallUpdate={handleSolutionWaterfallUpdate}
                   />
                 </div>
               </>
