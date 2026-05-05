@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BackupRouteImport } from './routes/backup'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BackupIndexRouteImport } from './routes/backup/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BackupRoute = BackupRouteImport.update({
   id: '/backup',
   path: '/backup',
@@ -45,12 +51,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/backup': typeof BackupRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/backup/': typeof BackupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/dashboard': typeof DashboardRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/backup': typeof BackupIndexRoute
 }
@@ -59,19 +67,27 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/backup': typeof BackupRouteWithChildren
+  '/dashboard': typeof DashboardRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/backup/': typeof BackupIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/backup' | '/demo/tanstack-query' | '/backup/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/backup'
+    | '/dashboard'
+    | '/demo/tanstack-query'
+    | '/backup/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/demo/tanstack-query' | '/backup'
+  to: '/' | '/about' | '/dashboard' | '/demo/tanstack-query' | '/backup'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/backup'
+    | '/dashboard'
     | '/demo/tanstack-query'
     | '/backup/'
   fileRoutesById: FileRoutesById
@@ -80,11 +96,19 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   BackupRoute: typeof BackupRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backup': {
       id: '/backup'
       path: '/backup'
@@ -138,6 +162,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   BackupRoute: BackupRouteWithChildren,
+  DashboardRoute: DashboardRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
 }
 export const routeTree = rootRouteImport
