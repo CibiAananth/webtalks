@@ -13,7 +13,11 @@ const config = defineConfig({
     devtools(),
     nitro({ rollupConfig: { external: [/^@sentry\//] } }),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart({
+      prerender: {
+        routes: ['/static/ssg'], // Only SSG is prerendered at build time
+      },
+    }),
     viteReact(),
   ],
 })

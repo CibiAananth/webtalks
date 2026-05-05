@@ -34,7 +34,7 @@ const fetchISRUser = createServerFn().handler(async (): Promise<User> => {
   }
 })
 
-// Type for the cached stats data
+// Type for the stats data
 type LiveStats = {
   generatedAt: string
   revalidateAfter: number
@@ -47,12 +47,9 @@ type LiveStats = {
   }
 }
 
-// In-memory cache for ISR simulation
-// In production, this would use Redis, Nitro storage, or edge cache
-let cachedData: { data: LiveStats; timestamp: number } | null = null
-
-function generateFreshData(): LiveStats {
-  console.log('[ISR] Generating fresh data at:', new Date().toISOString())
+// Server function - runs on every request that isn't cached by CDN
+const fetchLiveStats = createServerFn().handler(async (): Promise<LiveStats> => {
+  console.log('[ISR] Server function executed at:', new Date().toISOString())
   return {
     generatedAt: new Date().toISOString(),
     revalidateAfter: REVALIDATE_SECONDS,
@@ -64,25 +61,23 @@ function generateFreshData(): LiveStats {
       stockPrice: Number((150 + Math.random() * 10).toFixed(2)),
     },
   }
-}
-
-// Server function with manual ISR caching logic
-const fetchLiveStats = createServerFn().handler(async (): Promise<LiveStats> => {
-  const now = Date.now()
-
-  // If no cache or cache expired, generate fresh data
-  if (!cachedData || (now - cachedData.timestamp) > REVALIDATE_SECONDS * 1000) {
-    cachedData = {
-      data: generateFreshData(),
-      timestamp: now,
-    }
-  }
-
-  return cachedData.data
 })
 
 export const Route = createFileRoute('/static/isr')({
-  // This loader runs at build time AND on revalidation (no redeploy needed!)
+  // Cache headers for ISR - CDN will cache and revalidate
+  headers: () => ({
+    // Cache-Control for ISR behavior:
+    // - public: CDN can cache this
+    // - max-age=0: Browser should always revalidate
+    // - s-maxage=10: CDN caches for 10 seconds
+    // - stale-while-revalidate=86400: Serve stale while fetching fresh (up to 24h)
+    'Cache-Control': `public, max-age=0, s-maxage=${REVALIDATE_SECONDS}, stale-while-revalidate=86400`,
+    'CDN-Cache-Control': `public, max-age=${REVALIDATE_SECONDS}, stale-while-revalidate=86400`,
+    'x-render-mode': 'ISR',
+    'x-revalidate-seconds': String(REVALIDATE_SECONDS),
+  }),
+
+  // Loader runs when CDN cache misses or revalidates
   loader: async () => {
     const [user, stats] = await Promise.all([
       fetchISRUser(),

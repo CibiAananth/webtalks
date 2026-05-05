@@ -42,9 +42,16 @@ const fetchBuildInfo = createServerFn().handler(async (): Promise<{
 })
 
 export const Route = createFileRoute('/static/ssg')({
+  // Cache headers for SSG - immutable, cache forever until redeploy
+  headers: () => ({
+    'Cache-Control': 'public, max-age=31536000, immutable',
+    'x-render-mode': 'SSG',
+  }),
+
   // This loader runs at BUILD TIME when prerendering is enabled
   // The result is embedded in the static HTML
   loader: async () => {
+    console.log('[SSG] Loader executed at:', new Date().toISOString())
     const [user, buildInfo] = await Promise.all([
       fetchStaticUser(),
       fetchBuildInfo(),
