@@ -19,6 +19,11 @@ const users = [
     role: "Frontend Engineer",
     avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Priya",
     joined: "2023-03-15",
+    // Sensitive fields - should NOT be exposed to browser
+    stripeCustomerId: "cus_Rj8vK2mN4pL1xQ",
+    lastLoginIp: "192.168.1.47",
+    sessionToken: "sess_abc123xyz789def456",
+    internalDatabaseId: "mongo_65f2a1b3c4d5e6f7a8b9c0d1",
   },
   {
     id: 2,
@@ -27,6 +32,10 @@ const users = [
     role: "Backend Engineer",
     avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Rahul",
     joined: "2023-06-01",
+    stripeCustomerId: "cus_Xk9wL3nO5qM2yR",
+    lastLoginIp: "10.0.0.23",
+    sessionToken: "sess_def456abc123ghi789",
+    internalDatabaseId: "mongo_75g3b2c4d5e6f7a8b9c0d2",
   },
   {
     id: 3,
@@ -35,6 +44,10 @@ const users = [
     role: "Product Manager",
     avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Ananya",
     joined: "2024-01-10",
+    stripeCustomerId: "cus_Yl0xM4oP6rN3zS",
+    lastLoginIp: "172.16.0.105",
+    sessionToken: "sess_ghi789def456jkl012",
+    internalDatabaseId: "mongo_85h4c3d5e6f7a8b9c0d3",
   },
   {
     id: 4,
@@ -43,6 +56,10 @@ const users = [
     role: "DevOps Engineer",
     avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Vikram",
     joined: "2023-09-22",
+    stripeCustomerId: "cus_Zm1yN5pQ7sO4aT",
+    lastLoginIp: "192.168.2.89",
+    sessionToken: "sess_jkl012ghi789mno345",
+    internalDatabaseId: "mongo_95i5d4e6f7a8b9c0d4",
   },
   {
     id: 5,
@@ -51,8 +68,21 @@ const users = [
     role: "UX Designer",
     avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Meera",
     joined: "2024-02-05",
+    stripeCustomerId: "cus_An2zO6qR8tP5bU",
+    lastLoginIp: "10.10.10.42",
+    sessionToken: "sess_mno345jkl012pqr678",
+    internalDatabaseId: "mongo_05j6e5f7a8b9c0d5e6",
   },
 ];
+
+// User activity stats (internal analytics - normally from separate internal service)
+const userStats = {
+  1: { totalLogins: 247, documentsCreated: 89, apiCallsThisMonth: 1523 },
+  2: { totalLogins: 312, documentsCreated: 156, apiCallsThisMonth: 2341 },
+  3: { totalLogins: 98, documentsCreated: 45, apiCallsThisMonth: 876 },
+  4: { totalLogins: 189, documentsCreated: 23, apiCallsThisMonth: 3102 },
+  5: { totalLogins: 156, documentsCreated: 234, apiCallsThisMonth: 1245 },
+};
 
 const posts = [
   {
@@ -176,6 +206,16 @@ app.get("/api/users/:id", delayMiddleware, (req, res) => {
     return res.status(404).json({ error: "User not found" });
   }
   res.json({ data: user });
+});
+
+// GET /api/users/:id/stats (internal analytics - would normally be on private network)
+app.get("/api/users/:id/stats", delayMiddleware, (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const stats = userStats[userId];
+  if (!stats) {
+    return res.status(404).json({ error: "Stats not found" });
+  }
+  res.json({ data: stats });
 });
 
 // GET /api/users/:id/posts
