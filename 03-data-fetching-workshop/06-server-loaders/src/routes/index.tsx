@@ -29,8 +29,25 @@ function HomePage() {
 
       <div className="route-cards">
         <Link to="/demo" search={{ userId: 1 }} className="route-card">
-          <h2>Demo: Server Loader</h2>
-          <p>See the loader run on the server. Compare Network tab with 05-loaders.</p>
+          <div className="card-header">
+            <h2>Server Functions</h2>
+            <span className="badge">Security</span>
+          </div>
+          <p>
+            Compare SSR with React Query vs Server Functions.
+            See how server functions filter sensitive data and aggregate API calls.
+          </p>
+        </Link>
+
+        <Link to="/streaming/blocking" className="route-card">
+          <div className="card-header">
+            <h2>Streaming</h2>
+            <span className="badge accent">Performance</span>
+          </div>
+          <p>
+            Compare blocking (await all) vs streaming (defer).
+            Same data, dramatically different perceived performance.
+          </p>
         </Link>
       </div>
     </div>

@@ -85,7 +85,13 @@ function RootLayout() {
             to="/demo"
             activeProps={{ className: 'active' }}
           >
-            Demo
+            Server Functions
+          </Link>
+          <Link
+            to="/streaming"
+            activeProps={{ className: 'active' }}
+          >
+            Streaming
           </Link>
         </nav>
       </div>

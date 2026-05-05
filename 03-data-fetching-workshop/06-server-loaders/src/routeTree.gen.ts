@@ -9,11 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StreamingRouteImport } from './routes/streaming'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StreamingDeferredRouteImport } from './routes/streaming/deferred'
+import { Route as StreamingBlockingRouteImport } from './routes/streaming/blocking'
 import { Route as DemoServerFnRouteImport } from './routes/demo/server-fn'
 import { Route as DemoProfileRouteImport } from './routes/demo/profile'
 
+const StreamingRoute = StreamingRouteImport.update({
+  id: '/streaming',
+  path: '/streaming',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DemoRoute = DemoRouteImport.update({
   id: '/demo',
   path: '/demo',
@@ -23,6 +31,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StreamingDeferredRoute = StreamingDeferredRouteImport.update({
+  id: '/deferred',
+  path: '/deferred',
+  getParentRoute: () => StreamingRoute,
+} as any)
+const StreamingBlockingRoute = StreamingBlockingRouteImport.update({
+  id: '/blocking',
+  path: '/blocking',
+  getParentRoute: () => StreamingRoute,
 } as any)
 const DemoServerFnRoute = DemoServerFnRouteImport.update({
   id: '/server-fn',
@@ -38,37 +56,76 @@ const DemoProfileRoute = DemoProfileRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/demo': typeof DemoRouteWithChildren
+  '/streaming': typeof StreamingRouteWithChildren
   '/demo/profile': typeof DemoProfileRoute
   '/demo/server-fn': typeof DemoServerFnRoute
+  '/streaming/blocking': typeof StreamingBlockingRoute
+  '/streaming/deferred': typeof StreamingDeferredRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/demo': typeof DemoRouteWithChildren
+  '/streaming': typeof StreamingRouteWithChildren
   '/demo/profile': typeof DemoProfileRoute
   '/demo/server-fn': typeof DemoServerFnRoute
+  '/streaming/blocking': typeof StreamingBlockingRoute
+  '/streaming/deferred': typeof StreamingDeferredRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/demo': typeof DemoRouteWithChildren
+  '/streaming': typeof StreamingRouteWithChildren
   '/demo/profile': typeof DemoProfileRoute
   '/demo/server-fn': typeof DemoServerFnRoute
+  '/streaming/blocking': typeof StreamingBlockingRoute
+  '/streaming/deferred': typeof StreamingDeferredRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/demo' | '/demo/profile' | '/demo/server-fn'
+  fullPaths:
+    | '/'
+    | '/demo'
+    | '/streaming'
+    | '/demo/profile'
+    | '/demo/server-fn'
+    | '/streaming/blocking'
+    | '/streaming/deferred'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/demo' | '/demo/profile' | '/demo/server-fn'
-  id: '__root__' | '/' | '/demo' | '/demo/profile' | '/demo/server-fn'
+  to:
+    | '/'
+    | '/demo'
+    | '/streaming'
+    | '/demo/profile'
+    | '/demo/server-fn'
+    | '/streaming/blocking'
+    | '/streaming/deferred'
+  id:
+    | '__root__'
+    | '/'
+    | '/demo'
+    | '/streaming'
+    | '/demo/profile'
+    | '/demo/server-fn'
+    | '/streaming/blocking'
+    | '/streaming/deferred'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DemoRoute: typeof DemoRouteWithChildren
+  StreamingRoute: typeof StreamingRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/streaming': {
+      id: '/streaming'
+      path: '/streaming'
+      fullPath: '/streaming'
+      preLoaderRoute: typeof StreamingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/demo': {
       id: '/demo'
       path: '/demo'
@@ -82,6 +139,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/streaming/deferred': {
+      id: '/streaming/deferred'
+      path: '/deferred'
+      fullPath: '/streaming/deferred'
+      preLoaderRoute: typeof StreamingDeferredRouteImport
+      parentRoute: typeof StreamingRoute
+    }
+    '/streaming/blocking': {
+      id: '/streaming/blocking'
+      path: '/blocking'
+      fullPath: '/streaming/blocking'
+      preLoaderRoute: typeof StreamingBlockingRouteImport
+      parentRoute: typeof StreamingRoute
     }
     '/demo/server-fn': {
       id: '/demo/server-fn'
@@ -112,9 +183,24 @@ const DemoRouteChildren: DemoRouteChildren = {
 
 const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
 
+interface StreamingRouteChildren {
+  StreamingBlockingRoute: typeof StreamingBlockingRoute
+  StreamingDeferredRoute: typeof StreamingDeferredRoute
+}
+
+const StreamingRouteChildren: StreamingRouteChildren = {
+  StreamingBlockingRoute: StreamingBlockingRoute,
+  StreamingDeferredRoute: StreamingDeferredRoute,
+}
+
+const StreamingRouteWithChildren = StreamingRoute._addFileChildren(
+  StreamingRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DemoRoute: DemoRouteWithChildren,
+  StreamingRoute: StreamingRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

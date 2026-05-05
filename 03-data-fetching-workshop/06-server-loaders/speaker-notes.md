@@ -328,6 +328,128 @@ loader: async ({ context, location }) => {
 
 ---
 
+## Part 3: Streaming Demo (~15 minutes)
+
+Navigate to http://localhost:3000/streaming
+
+### Introduction (~2 min)
+
+**What to say:**
+
+> "We've seen how server functions control WHAT data reaches the browser. Now let's look at WHEN."
+>
+> "What if some data is fast (user profile: 300ms) and some is slow (recommendations: 2500ms)?"
+>
+> "Do you make users wait 2.5 seconds before seeing ANYTHING? Or show content progressively?"
+
+### Blocking Tab (~5 min)
+
+**What to do:**
+1. Click "Blocking (await all)" tab
+2. Click "Hard Reload"
+3. Watch the page — note how long before ANYTHING appears
+
+**What to observe:**
+- Spinner shows "Waiting for ALL data... (2.5 seconds)"
+- Nothing renders until ALL four requests complete
+- Total wait: ~2500ms before any content
+
+**What to say:**
+
+> "Watch the page. How long before you see content?"
+>
+> "2.5 seconds of nothing. The user profile was ready in 300ms, but you waited for recommendations."
+>
+> "This is `await Promise.all()` — blocks until the SLOWEST request finishes."
+
+### Streaming Tab (~5 min)
+
+**What to do:**
+1. Click "Streaming (defer)" tab
+2. Click "Hard Reload"
+3. Watch content appear progressively
+
+**What to observe:**
+- User Profile appears in ~300ms (green border, "immediate")
+- Posts stream in at ~800ms
+- Stats stream in at ~1500ms
+- Recommendations stream in at ~2500ms
+- Skeletons show for pending sections
+
+**What to say:**
+
+> "Same four requests. Same total data. Watch what happens."
+>
+> "User profile — immediate! 300ms and you see content."
+>
+> "Posts appear... Stats appear... Recommendations finally arrive."
+>
+> "Same 2.5 seconds total, but the user sees content in 300ms. That's perceived performance."
+
+### Explain the Code (~3 min)
+
+**Show the key difference:**
+
+```tsx
+// BLOCKING: await everything
+const [user, posts, stats, recs] = await Promise.all([...])
+// User waits 2500ms
+
+// STREAMING: await critical, defer the rest
+const user = await getCriticalData()  // 300ms - blocks
+const posts = defer(getPostsData())   // streams later
+const stats = defer(getStatsData())   // streams later
+const recs = defer(getRecommendations()) // streams later
+// User sees content in 300ms
+```
+
+> "`defer()` returns immediately. The promise resolves later, and the data streams to the browser."
+>
+> "In the component, wrap deferred data in `<Suspense>` + `<Await>`."
+>
+> "Critical data blocks navigation. Non-critical data streams in."
+
+### When to Use Streaming
+
+> "Use streaming when you have:"
+> - "A fast critical path (profile, main content)"
+> - "Slow secondary content (recommendations, analytics, comments)"
+> - "Users who benefit from seeing SOMETHING quickly"
+>
+> "Don't use streaming when:"
+> - "All data is equally critical"
+> - "The page doesn't make sense without all data"
+> - "Data loads fast enough that streaming adds complexity without benefit"
+
+---
+
+## Time Budget (Updated)
+
+| Section | Time |
+|---------|------|
+| Part 1: Server Functions Demo | 20 min |
+| Part 2: Code Walkthrough | 15 min |
+| Part 3: Streaming Demo | 15 min |
+| Key teaching points | 5 min |
+| **Total** | **~55 min** |
+
+---
+
+## Demo Script — Streaming Quick Reference
+
+### Tab 1: Blocking
+1. Hard Reload
+2. Count seconds until content appears
+3. **Key observation:** "2.5 seconds of nothing"
+
+### Tab 2: Streaming
+1. Hard Reload
+2. Watch content appear progressively
+3. **Key observation:** "Content in 300ms, rest streams in"
+4. **Key point:** "Same data, dramatically better perceived performance"
+
+---
+
 ## Wrap-Up
 
 **What to say:**
@@ -336,7 +458,8 @@ loader: async ({ context, location }) => {
 >
 > "Session 05: Move fetch-start from mount to navigation (client loaders)"
 > "Session 06: Move fetches from browser to server (server functions)"
+> "Session 06 bonus: Stream non-critical data with defer()"
 >
-> "Use client loaders for public data. Use server functions when you need security, internal APIs, or data control."
+> "Use client loaders for public data. Use server functions when you need security, internal APIs, or data control. Use streaming when you have slow secondary content."
 >
-> "The same pattern applies to Remix, Next.js RSC, and other SSR frameworks. The concepts transfer."
+> "The same patterns apply to Remix, Next.js RSC, and other SSR frameworks. The concepts transfer."
