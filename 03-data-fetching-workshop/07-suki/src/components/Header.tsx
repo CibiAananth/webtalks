@@ -71,6 +71,13 @@ export default function Header() {
           >
             Docs
           </a>
+          <Link
+            to="/backup"
+            className="nav-link"
+            activeProps={{ className: 'nav-link is-active' }}
+          >
+            Backup
+          </Link>
           <details className="relative w-full sm:w-auto">
             <summary className="nav-link list-none cursor-pointer">
               Demos
