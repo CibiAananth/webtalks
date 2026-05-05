@@ -1,8 +1,8 @@
 import { Suspense, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Await } from '@tanstack/react-router'
 import { useSuspenseQuery, useQuery } from '@tanstack/react-query'
+import { defer } from '@tanstack/react-router'
 import {
-  userQueryOptions,
   appointmentsQueryOptions,
   unfinishedNotesQueryOptions,
   searchPatientsQueryOptions,
@@ -10,6 +10,7 @@ import {
   USER_EMAIL,
   type Patient,
 } from '../../api'
+import { getUser, getDashboardStats, type DashboardStats } from '../../server-fns'
 import {
   UserCard,
   AppointmentList,
@@ -22,27 +23,33 @@ import {
   Card,
   CardContent,
   ErrorDisplay,
+  StatsCard,
+  StatsCardSkeleton,
 } from '../../components'
 
 // ════════════════════════════════════════════════════════════════════════════════
 // ROUTE DEFINITION
 // ════════════════════════════════════════════════════════════════════════════════
 
-export const Route = createFileRoute('/backup/')({
-  // Pattern 1: BLOCKING - User data is critical, block navigation until loaded
+export const Route = createFileRoute('/backup/')(({
   loader: async ({ context }) => {
     const { queryClient } = context
 
-    // This blocks - user won't see the page until this resolves
-    const { user } = await queryClient.ensureQueryData(userQueryOptions(USER_EMAIL))
+    // ┌─────────────────────────────────────────────────────────────────────────────┐
+    // │ Pattern 1: BLOCKING with SERVER FUNCTION                                    │
+    // │ User data is critical - block navigation until loaded                       │
+    // │ Using server function: runs on server, can access server-only resources     │
+    // └─────────────────────────────────────────────────────────────────────────────┘
+    const { user } = await getUser({ data: { email: USER_EMAIL } })
 
-    // Pattern 2: FIRE & FORGET - Prefetch in loader, render with Suspense
-    // These start fetching but DON'T block navigation
+    // ┌─────────────────────────────────────────────────────────────────────────────┐
+    // │ Pattern 2: FIRE & FORGET - Prefetch for Suspense sections                   │
+    // │ Start fetching but DON'T block navigation                                   │
+    // └─────────────────────────────────────────────────────────────────────────────┘
     const today = new Date()
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString()
     const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString()
 
-    // Fire & forget - prefetch without awaiting
     queryClient.prefetchQuery(
       appointmentsQueryOptions({
         startsAtRangeBeginning: startOfDay,
@@ -54,10 +61,20 @@ export const Route = createFileRoute('/backup/')({
 
     queryClient.prefetchQuery(unfinishedNotesQueryOptions({ includeMetadata: true }))
 
-    return { user }
+    // ┌─────────────────────────────────────────────────────────────────────────────┐
+    // │ Pattern 3: DEFER - Non-critical data that streams in later                  │
+    // │ Dashboard stats are nice-to-have, not blocking                              │
+    // │ Using server function for aggregation                                       │
+    // └─────────────────────────────────────────────────────────────────────────────┘
+    const statsPromise = getDashboardStats({ data: { email: USER_EMAIL } })
+
+    return {
+      user,
+      // defer() wraps the promise - component renders immediately, data streams in
+      deferredStats: defer(statsPromise),
+    }
   },
 
-  // Show while loader is blocking (waiting for user data)
   pendingComponent: () => (
     <div className="flex items-center justify-center py-12">
       <div className="text-center">
@@ -76,22 +93,22 @@ export const Route = createFileRoute('/backup/')({
   ),
 
   component: BackupDashboard,
-})
+}))
 
 // ════════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ════════════════════════════════════════════════════════════════════════════════
 
 function BackupDashboard() {
-  const { user } = Route.useLoaderData()
+  const { user, deferredStats } = Route.useLoaderData()
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
 
   return (
     <div className="space-y-6">
       {/* Top Row: User Card + Patient Search */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* User Card - Already loaded (blocking) */}
-        <Section title="Current User" description="Blocking pattern">
+        {/* User Card - Loaded via blocking server function */}
+        <Section title="Current User" description="Blocking + Server Function">
           <UserCard user={user} />
         </Section>
 
@@ -100,6 +117,19 @@ function BackupDashboard() {
           <PatientSearchSection onPatientSelect={setSelectedPatient} />
         </Section>
       </div>
+
+      {/* Stats Row - Deferred/Streaming */}
+      <Section
+        title="Dashboard Stats"
+        description="Defer pattern - streams in after initial render"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Await component handles the deferred promise */}
+          <Await promise={deferredStats} fallback={<DeferredStatsSkeleton />}>
+            {(stats) => <DeferredStatsDisplay stats={stats} />}
+          </Await>
+        </div>
+      </Section>
 
       {/* Dashboard Grid - 3 columns when patient selected */}
       <div className={`grid gap-6 ${selectedPatient ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
@@ -149,6 +179,44 @@ function BackupDashboard() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
+// DEFERRED STATS (uses Await for streaming)
+// ════════════════════════════════════════════════════════════════════════════════
+
+function DeferredStatsSkeleton() {
+  return (
+    <>
+      <StatsCardSkeleton />
+      <StatsCardSkeleton />
+    </>
+  )
+}
+
+function DeferredStatsDisplay({ stats }: { stats: DashboardStats }) {
+  return (
+    <>
+      <StatsCard
+        title="Today's Appointments"
+        stats={[
+          { label: 'Total', value: stats.todaysAppointments.total },
+          { label: 'Completed', value: stats.todaysAppointments.completed, variant: 'success' },
+          { label: 'In Progress', value: stats.todaysAppointments.inProgress, variant: 'info' },
+          { label: 'Upcoming', value: stats.todaysAppointments.upcoming },
+        ]}
+      />
+      <StatsCard
+        title="Unfinished Notes"
+        stats={[
+          { label: 'Total', value: stats.unfinishedNotes.total, variant: stats.unfinishedNotes.total > 0 ? 'warning' : 'default' },
+          { label: 'Drafts', value: stats.unfinishedNotes.drafts },
+          { label: 'In Progress', value: stats.unfinishedNotes.inProgress },
+          { label: 'Oldest (days)', value: stats.unfinishedNotes.oldestDays ?? '-' },
+        ]}
+      />
+    </>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
 // SUSPENSE SECTIONS (use useSuspenseQuery - will suspend until data is ready)
 // ════════════════════════════════════════════════════════════════════════════════
 
@@ -157,8 +225,6 @@ function AppointmentsSection({ onSelectPatient }: { onSelectPatient: (patient: P
   const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString()
   const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString()
 
-  // useSuspenseQuery - suspends until data is available
-  // Works with prefetchQuery from loader - if data is cached, no suspend
   const { data } = useSuspenseQuery(
     appointmentsQueryOptions({
       startsAtRangeBeginning: startOfDay,
@@ -210,10 +276,8 @@ function PatientSearchSection({
 }) {
   const [searchQuery, setSearchQuery] = useState('')
 
-  // useQuery with enabled - only fetches when query is long enough
   const { data, isLoading, isError, error } = useQuery({
     ...searchPatientsQueryOptions({ name: searchQuery, limit: 10 }),
-    // enabled is already in searchPatientsQueryOptions (name.length >= 2)
   })
 
   const handleSelect = (patient: Patient) => {

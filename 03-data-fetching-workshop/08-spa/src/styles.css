@@ -1,0 +1,73 @@
+@import 'tailwindcss';
+
+:root {
+  /* Sea-inspired palette */
+  --sea-ink: #1e3a32;
+  --sea-ink-soft: #4a6b5d;
+  --lagoon: #3d9b8f;
+  --lagoon-deep: #2d7a70;
+  --seafoam: #a8d5cf;
+  --sand: #f5f0e8;
+  --coral: #e07a5f;
+
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-strong: #fafbfa;
+  --header-bg: rgba(255, 255, 255, 0.85);
+  --line: #e2e8e6;
+  --chip-bg: #f0f5f3;
+  --chip-line: #d4e0dc;
+  --link-bg-hover: rgba(61, 155, 143, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sea-ink: #e8f0ed;
+    --sea-ink-soft: #9bb3a8;
+    --lagoon: #56c6be;
+    --lagoon-deep: #7ed3bf;
+    --seafoam: #3d6b63;
+    --sand: #1a2420;
+    --coral: #f09078;
+
+    --surface: #0f1a16;
+    --surface-strong: #162420;
+    --header-bg: rgba(15, 26, 22, 0.85);
+    --line: #2a3d36;
+    --chip-bg: #1e2e28;
+    --chip-line: #344840;
+    --link-bg-hover: rgba(86, 198, 190, 0.12);
+  }
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--sand);
+  color: var(--sea-ink);
+  min-height: 100vh;
+}
+
+.page-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.nav-link {
+  color: var(--sea-ink-soft);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.15s;
+}
+
+.nav-link:hover {
+  color: var(--sea-ink);
+  background: var(--link-bg-hover);
+}
+
+.nav-link.active {
+  color: var(--lagoon-deep);
+  font-weight: 600;
+}

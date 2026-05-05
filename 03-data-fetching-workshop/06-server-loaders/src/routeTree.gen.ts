@@ -10,16 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StreamingRouteImport } from './routes/streaming'
+import { Route as StaticRouteImport } from './routes/static'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StreamingDeferredRouteImport } from './routes/streaming/deferred'
 import { Route as StreamingBlockingRouteImport } from './routes/streaming/blocking'
+import { Route as StaticSsgRouteImport } from './routes/static/ssg'
+import { Route as StaticIsrRouteImport } from './routes/static/isr'
 import { Route as DemoServerFnRouteImport } from './routes/demo/server-fn'
 import { Route as DemoProfileRouteImport } from './routes/demo/profile'
 
 const StreamingRoute = StreamingRouteImport.update({
   id: '/streaming',
   path: '/streaming',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaticRoute = StaticRouteImport.update({
+  id: '/static',
+  path: '/static',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoRoute = DemoRouteImport.update({
@@ -42,6 +50,16 @@ const StreamingBlockingRoute = StreamingBlockingRouteImport.update({
   path: '/blocking',
   getParentRoute: () => StreamingRoute,
 } as any)
+const StaticSsgRoute = StaticSsgRouteImport.update({
+  id: '/ssg',
+  path: '/ssg',
+  getParentRoute: () => StaticRoute,
+} as any)
+const StaticIsrRoute = StaticIsrRouteImport.update({
+  id: '/isr',
+  path: '/isr',
+  getParentRoute: () => StaticRoute,
+} as any)
 const DemoServerFnRoute = DemoServerFnRouteImport.update({
   id: '/server-fn',
   path: '/server-fn',
@@ -56,18 +74,24 @@ const DemoProfileRoute = DemoProfileRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/demo': typeof DemoRouteWithChildren
+  '/static': typeof StaticRouteWithChildren
   '/streaming': typeof StreamingRouteWithChildren
   '/demo/profile': typeof DemoProfileRoute
   '/demo/server-fn': typeof DemoServerFnRoute
+  '/static/isr': typeof StaticIsrRoute
+  '/static/ssg': typeof StaticSsgRoute
   '/streaming/blocking': typeof StreamingBlockingRoute
   '/streaming/deferred': typeof StreamingDeferredRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/demo': typeof DemoRouteWithChildren
+  '/static': typeof StaticRouteWithChildren
   '/streaming': typeof StreamingRouteWithChildren
   '/demo/profile': typeof DemoProfileRoute
   '/demo/server-fn': typeof DemoServerFnRoute
+  '/static/isr': typeof StaticIsrRoute
+  '/static/ssg': typeof StaticSsgRoute
   '/streaming/blocking': typeof StreamingBlockingRoute
   '/streaming/deferred': typeof StreamingDeferredRoute
 }
@@ -75,9 +99,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/demo': typeof DemoRouteWithChildren
+  '/static': typeof StaticRouteWithChildren
   '/streaming': typeof StreamingRouteWithChildren
   '/demo/profile': typeof DemoProfileRoute
   '/demo/server-fn': typeof DemoServerFnRoute
+  '/static/isr': typeof StaticIsrRoute
+  '/static/ssg': typeof StaticSsgRoute
   '/streaming/blocking': typeof StreamingBlockingRoute
   '/streaming/deferred': typeof StreamingDeferredRoute
 }
@@ -86,27 +113,36 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/demo'
+    | '/static'
     | '/streaming'
     | '/demo/profile'
     | '/demo/server-fn'
+    | '/static/isr'
+    | '/static/ssg'
     | '/streaming/blocking'
     | '/streaming/deferred'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/demo'
+    | '/static'
     | '/streaming'
     | '/demo/profile'
     | '/demo/server-fn'
+    | '/static/isr'
+    | '/static/ssg'
     | '/streaming/blocking'
     | '/streaming/deferred'
   id:
     | '__root__'
     | '/'
     | '/demo'
+    | '/static'
     | '/streaming'
     | '/demo/profile'
     | '/demo/server-fn'
+    | '/static/isr'
+    | '/static/ssg'
     | '/streaming/blocking'
     | '/streaming/deferred'
   fileRoutesById: FileRoutesById
@@ -114,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DemoRoute: typeof DemoRouteWithChildren
+  StaticRoute: typeof StaticRouteWithChildren
   StreamingRoute: typeof StreamingRouteWithChildren
 }
 
@@ -124,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/streaming'
       fullPath: '/streaming'
       preLoaderRoute: typeof StreamingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/static': {
+      id: '/static'
+      path: '/static'
+      fullPath: '/static'
+      preLoaderRoute: typeof StaticRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo': {
@@ -154,6 +198,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StreamingBlockingRouteImport
       parentRoute: typeof StreamingRoute
     }
+    '/static/ssg': {
+      id: '/static/ssg'
+      path: '/ssg'
+      fullPath: '/static/ssg'
+      preLoaderRoute: typeof StaticSsgRouteImport
+      parentRoute: typeof StaticRoute
+    }
+    '/static/isr': {
+      id: '/static/isr'
+      path: '/isr'
+      fullPath: '/static/isr'
+      preLoaderRoute: typeof StaticIsrRouteImport
+      parentRoute: typeof StaticRoute
+    }
     '/demo/server-fn': {
       id: '/demo/server-fn'
       path: '/server-fn'
@@ -183,6 +241,19 @@ const DemoRouteChildren: DemoRouteChildren = {
 
 const DemoRouteWithChildren = DemoRoute._addFileChildren(DemoRouteChildren)
 
+interface StaticRouteChildren {
+  StaticIsrRoute: typeof StaticIsrRoute
+  StaticSsgRoute: typeof StaticSsgRoute
+}
+
+const StaticRouteChildren: StaticRouteChildren = {
+  StaticIsrRoute: StaticIsrRoute,
+  StaticSsgRoute: StaticSsgRoute,
+}
+
+const StaticRouteWithChildren =
+  StaticRoute._addFileChildren(StaticRouteChildren)
+
 interface StreamingRouteChildren {
   StreamingBlockingRoute: typeof StreamingBlockingRoute
   StreamingDeferredRoute: typeof StreamingDeferredRoute
@@ -200,6 +271,7 @@ const StreamingRouteWithChildren = StreamingRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DemoRoute: DemoRouteWithChildren,
+  StaticRoute: StaticRouteWithChildren,
   StreamingRoute: StreamingRouteWithChildren,
 }
 export const routeTree = rootRouteImport

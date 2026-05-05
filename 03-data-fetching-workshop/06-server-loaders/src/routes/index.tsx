@@ -49,6 +49,17 @@ function HomePage() {
             Same data, dramatically different perceived performance.
           </p>
         </Link>
+
+        <Link to="/static/ssg" className="route-card">
+          <div className="card-header">
+            <h2>Static Generation</h2>
+            <span className="badge" style={{ background: 'var(--success)', color: 'var(--bg-primary)' }}>Caching</span>
+          </div>
+          <p>
+            Compare SSG (build-time) vs ISR (revalidating).
+            Pre-render pages for instant load, with optional freshness.
+          </p>
+        </Link>
       </div>
     </div>
   )

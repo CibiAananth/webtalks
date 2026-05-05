@@ -18,6 +18,7 @@ import {
   Section,
   Card,
   CardContent,
+  SimpleRenderIndicator,
 } from '../components'
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -50,11 +51,14 @@ function Dashboard() {
 
   return (
     <div className="page-wrap py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--sea-ink)]">Dashboard</h1>
-        <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
-          Live coding demo - replace mock data with real API calls
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--sea-ink)]">Dashboard</h1>
+          <p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+            Live coding demo - replace mock data with real API calls
+          </p>
+        </div>
+        <SimpleRenderIndicator />
       </div>
 
       <div className="space-y-6">
